@@ -154,6 +154,35 @@ Color* interpolateColor(Color* start, Color* end, float t) {
     );
 }
 
+bool Color_equals(const Color* a, const Color* b) {
+    return (a->r == b->r) && (a->g == b->g) && (a->b == b->b) && (a->a == b->a);
+}
+
+Color* Color_fromHex(const char* hex) {
+    if (String_isNullOrEmpty(hex)) {
+        return NULL;
+    }
+
+    unsigned int r = 0, g = 0, b = 0, a = 255;
+    size_t len = strlen(hex);
+
+    if (hex[0] == '#') {
+        hex++;
+        len--;
+    }
+
+    if (len == 6) {
+        sscanf(hex, "%02x%02x%02x", &r, &g, &b);
+    } else if (len == 8) {
+        sscanf(hex, "%02x%02x%02x%02x", &r, &g, &b, &a);
+    } else {
+        error("Invalid hex color format: %s", hex);
+        return NULL;
+    }
+
+    return Color_rgba(r, g, b, a);
+}
+
 char* Strdup(const char* str) {
     if (!str) return NULL;
     size_t len = strlen(str);
@@ -213,6 +242,26 @@ bool String_isNumeric(const char* str) {
     return endPtr != str && *endPtr == '\0';
 }
 
-int modulo(int a, int b) {
+int modulo(const int a, const int b) {
     return ((a % b) + b) % b;
+}
+
+int arrayMax(const int* arr, const int len) {
+    int maximum = arr[0];
+    for (int i = 1; i < len; i++) {
+        if (arr[i] > maximum) {
+            maximum = arr[i];
+        }
+    }
+    return maximum;
+}
+
+int arrayMin(const int* arr, const int len) {
+    int minimum = arr[0];
+    for (int i = 1; i < len; i++) {
+        if (arr[i] < minimum) {
+            minimum = arr[i];
+        }
+    }
+    return minimum;
 }

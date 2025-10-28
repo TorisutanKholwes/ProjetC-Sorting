@@ -27,6 +27,8 @@ Color* Color_hsv(float h, float s, float v);
 Color* Color_copy(Color* color);
 SDL_Color Color_toSDLColor(Color* color);
 Color* interpolateColor(Color* start, Color* end, float t);
+bool Color_equals(const Color* a, const Color* b);
+Color* Color_fromHex(const char* hex);
 void Color_destroy(Color* color);
 
 void safe_free(void** ptr);
@@ -43,3 +45,5 @@ float String_parseFloat(const char* str, float defaultValue);
 bool String_isNumeric(const char* str);
 
 int modulo(int a, int b);
+int arrayMax(const int* arr, int len);
+int arrayMin(const int* arr, int len);

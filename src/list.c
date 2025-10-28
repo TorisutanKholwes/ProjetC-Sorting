@@ -7,9 +7,10 @@
 #include "utils.h"
 #include "string_builder.h"
 
-static void List_sortBubble(List* list);
-static void List_sortQuick(List* list);
-static void List_sortMerge(List* list);
+static void List_sortBubble(List* list, CompareFunc compare_func);
+static void List_sortQuick(List* list, CompareFunc compare_func);
+static void List_sortMerge(List* list, CompareFunc compare_func);
+static int List_defaultCompare(const void* a, const void* b);
 
 List *List_create() {
     List *list = calloc(1, sizeof(List));
@@ -222,8 +223,15 @@ void List_swap(List* list, size_t index1, size_t index2) {
     node2->value = temp;
 }
 
-static void List_sortBubble(List* list) {
+static int List_defaultCompare(const void* a, const void* b) {
+    return (long)a - (long)b;
+}
+
+static void List_sortBubble(List* list, CompareFunc compare_func) {
     if (!list || list->size < 2) return;
+    if (!compare_func) {
+        compare_func = List_defaultCompare;
+    }
 
     bool swapped;
     do {
@@ -231,9 +239,9 @@ static void List_sortBubble(List* list) {
         ListNode* node = list->head->next;
         while (node->next != list->head) {
             ListNode* next = node->next;
-            long a = (long)node->value;
-            long b = (long)next->value;
-            if (a > b) {
+            void* a = node->value;
+            void* b = next->value;
+            if (compare_func(a, b) > 0) {
                 void* temp = node->value;
                 node->value = next->value;
                 next->value = temp;
@@ -244,11 +252,11 @@ static void List_sortBubble(List* list) {
     } while (swapped);
 }
 
-static ListNode* partitionQS(ListNode* low, ListNode* high) {
-    long pivot = (long)high->value;
+static ListNode* partitionQS(ListNode* low, ListNode* high, CompareFunc compare_func) {
+    void* pivot = high->value;
     ListNode* i = low ? low->prev : NULL;
     for (ListNode* j = low; j != high; j = j->next) {
-        if ((long)j->value <= pivot) {
+        if (compare_func(j->value, pivot) <= 0) {
             i = (i == NULL) ? low : i->next;
             void* tmp = i->value;
             i->value = j->value;
@@ -262,17 +270,21 @@ static ListNode* partitionQS(ListNode* low, ListNode* high) {
     return i;
 }
 
-static void quickSortRec(ListNode* low, ListNode* high) {
+static void quickSortRec(ListNode* low, ListNode* high, CompareFunc compare_func) {
     if (!low || !high) return;
     if (low != high && low != high->next) {
-        ListNode* p = partitionQS(low, high);
-        quickSortRec(low, p->prev);
-        quickSortRec(p->next, high);
+        ListNode* p = partitionQS(low, high, compare_func);
+        quickSortRec(low, p->prev, compare_func);
+        quickSortRec(p->next, high, compare_func);
     }
 }
 
-static void List_sortQuick(List* list) {
+static void List_sortQuick(List* list, CompareFunc compare_func) {
     if (!list || list->size < 2) return;
+
+    if (!compare_func) {
+        compare_func = List_defaultCompare;
+    }
 
     ListNode* first = list->head->next;
     ListNode* last = list->head->prev;
@@ -280,7 +292,7 @@ static void List_sortQuick(List* list) {
     first->prev = NULL;
     last->next = NULL;
 
-    quickSortRec(first, last);
+    quickSortRec(first, last, compare_func);
 
     ListNode* new_first = first;
     while (new_first->prev) {
@@ -310,7 +322,7 @@ static ListNode* splitMiddle(ListNode* head) {
     return mid;
 }
 
-static ListNode* mergeTwoSorted(ListNode* a, ListNode* b) {
+static ListNode* mergeTwoSorted(ListNode* a, ListNode* b, CompareFunc compare_func) {
     if (!a) return b;
     if (!b) return a;
     ListNode* head = NULL;
@@ -318,7 +330,7 @@ static ListNode* mergeTwoSorted(ListNode* a, ListNode* b) {
 
     while (a && b) {
         ListNode* take = NULL;
-        if ((long)a->value <= (long)b->value) {
+        if (compare_func(a->value, b->value) <= 0) {
             take = a;
             a = a->next;
         } else {
@@ -344,15 +356,15 @@ static ListNode* mergeTwoSorted(ListNode* a, ListNode* b) {
     return head;
 }
 
-static ListNode* mergeSortRec(ListNode* head) {
+static ListNode* mergeSortRec(ListNode* head, CompareFunc compare_func) {
     if (!head || !head->next) return head;
     ListNode* mid = splitMiddle(head);
-    ListNode* left = mergeSortRec(head);
-    ListNode* right = mergeSortRec(mid);
-    return mergeTwoSorted(left, right);
+    ListNode* left = mergeSortRec(head, compare_func);
+    ListNode* right = mergeSortRec(mid, compare_func);
+    return mergeTwoSorted(left, right, compare_func);
 }
 
-static void List_sortMerge(List* list) {
+static void List_sortMerge(List* list, CompareFunc compare_func) {
     if (!list || list->size < 2) return;
 
     ListNode* first = list->head->next;
@@ -360,7 +372,7 @@ static void List_sortMerge(List* list) {
     first->prev = NULL;
     last->next = NULL;
 
-    ListNode* new_first = mergeSortRec(first);
+    ListNode* new_first = mergeSortRec(first, compare_func);
 
     ListNode* new_last = new_first;
     while (new_last->next) {
@@ -373,16 +385,16 @@ static void List_sortMerge(List* list) {
     new_last->next = list->head;
 }
 
-void List_sort(List* list, ListSortType sortType) {
+void List_sort(List* list, ListSortType sortType, CompareFunc compare_func) {
     switch (sortType) {
         case LIST_SORT_TYPE_BUBBLE:
-            List_sortBubble(list);
+            List_sortBubble(list, compare_func);
             break;
         case LIST_SORT_TYPE_QUICK:
-            List_sortQuick(list);
+            List_sortQuick(list, compare_func);
             break;
         case LIST_SORT_TYPE_MERGE:
-            List_sortMerge(list);
+            List_sortMerge(list, compare_func);
             break;
         default:
             log_message(LOG_LEVEL_WARN, "Unknown ListSortType: %d", sortType);

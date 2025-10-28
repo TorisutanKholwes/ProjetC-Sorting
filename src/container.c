@@ -10,7 +10,7 @@
 #include "utils.h"
 #include "list.h"
 
-Container* Container_new(float x, float y, float width, float height, Color* color) {
+Container* Container_new(float x, float y, float width, float height, Color* color, void* parent) {
     Container* container = calloc(1, sizeof(Container));
     if (!container) {
         error("Failed to allocate memory for Container");
@@ -18,6 +18,7 @@ Container* Container_new(float x, float y, float width, float height, Color* col
     }
     container->box = Box_new(width, height, 0, Position_new(x, y), color, NULL, false);
     container->children = List_create();
+    container->parent = parent;
 
     return container;
 }
@@ -46,5 +47,22 @@ void Container_render(Container* container, SDL_Renderer* renderer) {
     Box_render(container->box, renderer);
 
     Element_renderList(container->children, renderer);
+}
 
+void Container_update(Container* container) {
+    if (!container) return;
+
+    Element_updateList(container->children);
+}
+
+void Container_focus(Container* container) {
+    if (!container) return;
+
+    Element_focusList(container->children);
+}
+
+void Container_unFocus(Container* container) {
+    if (!container) return;
+
+    Element_unfocusList(container->children);
 }

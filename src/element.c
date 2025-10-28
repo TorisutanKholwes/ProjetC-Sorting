@@ -195,12 +195,14 @@ void Element_update(Element* element) {
         case ELEMENT_TYPE_INPUT:
             InputBox_update(element->data.input_box);
             break;
+        case ELEMENT_TYPE_CONTAINER:
+            Container_update(element->data.container);
+            break;
         case ELEMENT_TYPE_TEXT:
         case ELEMENT_TYPE_BOX:
         case ELEMENT_TYPE_CIRCLE:
         case ELEMENT_TYPE_POLYGON:
         case ELEMENT_TYPE_IMAGE:
-        case ELEMENT_TYPE_CONTAINER:
             // No update needed for text currently
             break;
         default:
@@ -218,12 +220,14 @@ void Element_focus(Element* element) {
         case ELEMENT_TYPE_INPUT:
             InputBox_focus(element->data.input_box);
             break;
+        case ELEMENT_TYPE_CONTAINER:
+            Container_focus(element->data.container);
+            break;
         case ELEMENT_TYPE_TEXT:
         case ELEMENT_TYPE_BOX:
         case ELEMENT_TYPE_CIRCLE:
         case ELEMENT_TYPE_POLYGON:
         case ELEMENT_TYPE_IMAGE:
-        case ELEMENT_TYPE_CONTAINER:
             break;
         default:
             log_message(LOG_LEVEL_WARN, "Element_focus: Unknown element type %d", element->type);
@@ -240,12 +244,14 @@ void Element_unfocus(Element* element) {
         case ELEMENT_TYPE_INPUT:
             InputBox_unFocus(element->data.input_box);
             break;
+        case ELEMENT_TYPE_CONTAINER:
+            Container_unFocus(element->data.container);
+            break;
         case ELEMENT_TYPE_TEXT:
         case ELEMENT_TYPE_BOX:
         case ELEMENT_TYPE_CIRCLE:
         case ELEMENT_TYPE_POLYGON:
         case ELEMENT_TYPE_IMAGE:
-        case ELEMENT_TYPE_CONTAINER:
             break;
         default:
             log_message(LOG_LEVEL_WARN, "Element_unfocus: Unknown element type %d", element->type);

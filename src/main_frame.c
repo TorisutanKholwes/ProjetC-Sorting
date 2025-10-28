@@ -34,6 +34,8 @@ static void MainFrame_onRuneM(Input* input, SDL_Event* evt, MainFrame* self);
 
 static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self);
 
+static void MainFrame_onEnter(Input* input, SDL_Event* evt, MainFrame* self);
+
 static bool MainFrame_createPopup(MainFrame* self, float value);
 
 static bool MainFrame_removePopup(MainFrame* self, float value);
@@ -109,20 +111,35 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
     Container_addChild(container, Element_fromText(Text_new(app->renderer,
                                                             TextStyle_new(
                                                                 ResourceManager_getDefaultBoldFont(app->manager, 36),
-                                                                36, COLOR_WHITE, TTF_STYLE_NORMAL),
+                                                                36, COLOR_WHITE, TTF_STYLE_UNDERLINE),
                                                             Position_new(w + 10, 10),
                                                             false,
                                                             "Settings"
                                                    ), NULL));
-    Button* b = Button_new(self->app,
-                           Position_new(w, 50),
-                           false,
-                           ButtonStyle_default(self->app->manager),
-                           container,
-                           "Close"
-    );
-    Button_onClick(b, (EventHandlerFunc) MainFrame_quitApp);
-    Container_addChild(container, Element_fromButton(b, NULL));
+
+    InputBox* inputBar = InputBox_new(self->app,
+        SDL_CreateRect(w + 2, 50, settingsWidth - 24, 40, false), InputBoxStyle_default(self->app->manager),
+        container);
+    InputBox_setStringf(inputBar, "%d", self->bar_count);
+
+    InputBox* inputGraph = InputBox_new(self->app,
+        SDL_CreateRect(w + 2, 100, settingsWidth - 24, 40, false), InputBoxStyle_default(self->app->manager),
+        container);
+    InputBox_setStringf(inputGraph, "%d", self->graph_count);
+
+    Container_addChild(container, Element_fromInput(inputBar, "inputBar"));
+    Container_addChild(container, Element_fromInput(inputGraph, "inputGraph"));
+
+    Button* closeButton = Button_new(self->app,
+                               Position_new(w, h - 75),
+                               false,
+                               ButtonStyle_default(self->app->manager),
+                               container,
+                               "Close"
+        );
+    Button_onClick(closeButton, (EventHandlerFunc) MainFrame_quitApp);
+    Container_addChild(container, Element_fromButton(closeButton, NULL));
+
     List_push(self->elements, Element_fromContainer(container, "settings"));
 }
 
@@ -174,6 +191,7 @@ void MainFrame_focus(MainFrame* self) {
     Input_addKeyEventHandler(self->app->input, SDLK_P, (EventHandlerFunc) MainFrame_onRuneP, self);
     Input_addKeyEventHandler(self->app->input, SDLK_M, (EventHandlerFunc) MainFrame_onRuneM, self);
     Input_addKeyEventHandler(self->app->input, SDLK_Q, (EventHandlerFunc) MainFrame_onRuneQ, self);
+    Input_addKeyEventHandler(self->app->input, SDLK_RETURN, (EventHandlerFunc) MainFrame_onEnter, self);
 }
 
 void MainFrame_unfocus(MainFrame* self) {
@@ -184,6 +202,7 @@ void MainFrame_unfocus(MainFrame* self) {
     Input_removeOneKeyEventHandler(self->app->input, SDLK_P, self);
     Input_removeOneKeyEventHandler(self->app->input, SDLK_M, self);
     Input_removeOneKeyEventHandler(self->app->input, SDLK_Q, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDLK_RETURN, self);
 }
 
 Frame* MainFrame_getFrame(MainFrame* self) {
@@ -313,4 +332,27 @@ static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self) {
         ColumnGraph_sortGraph(self->graph[i], LIST_SORT_TYPE_QUICK);
     }
     MainFrame_addElements(self, self->app);
+}
+
+static void MainFrame_onEnter(Input* input, SDL_Event* evt, MainFrame* self) {
+    if (!self || !self->showSettings) return;
+    Container* container = Element_getById(self->elements, "settings")->data.container;
+
+    InputBox* inputBar = Element_getById(container->children, "inputBar")->data.input_box;
+    InputBox* inputGraph = Element_getById(container->children, "inputGraph")->data.input_box;
+    if (!String_isNumeric(InputBox_getString(inputBar)) || ! String_isNumeric(InputBox_getString(inputGraph))) {
+        return;
+    }
+    int barCount = atoi(InputBox_getString(inputBar));
+    int graphCount = atoi(InputBox_getString(inputGraph));
+    if (barCount <= 0 || graphCount <= 0) {
+        return;
+    }
+    self->bar_count = barCount;
+    self->showSettings = false;
+    for (int i = 0; i < self->graph_count; i++) {
+        ColumnGraph_destroy(self->graph[i]);
+    }
+    self->graph_count = graphCount;
+    MainFrame_updateGraphs(self);
 }

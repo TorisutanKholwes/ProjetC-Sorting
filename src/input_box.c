@@ -41,6 +41,15 @@ InputBox *InputBox_new(App *app, SDL_FRect rect, InputBoxStyle *style, void* par
 
 void InputBox_destroy(InputBox *self) {
     if (!self) return;
+
+    Timer_stop(self->timer);
+    Input_removeOneEventHandler(self->input, SDL_EVENT_TEXT_INPUT, self);
+    Input_removeOneEventHandler(self->input, SDL_EVENT_KEY_DOWN, self);
+    Input_removeOneEventHandler(self->input, SDL_EVENT_MOUSE_BUTTON_DOWN, self);
+    if (self->selected) {
+        SDL_StopTextInput(self->app->window);
+    }
+
     Text_destroy(self->text);
     InputBoxStyle_destroy(self->style);
     Timer_destroy(self->timer);

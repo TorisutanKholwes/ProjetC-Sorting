@@ -66,16 +66,20 @@ void ColumnGraph_initBars(ColumnGraph* graph, int bars_count) {
     };
     int numColors = sizeof(rainbow) / sizeof(rainbow[0]);
 
-    for (int i = 1; i < bars_count+1; i++) {
-        float t = (float) i / (float)(bars_count- 1);
-        int idx = (int)(t * (numColors - 1));
+    for (int i = 0; i < bars_count; i++) {
+        float t = (bars_count <= 1) ? 0.0f : (float)i / (float)(bars_count - 1);
+        float pos = t * (numColors - 1);
+        int idx = (int)floorf(pos);
+        if (idx < 0) idx = 0;
         Color* grad;
-        if (idx < numColors - 1) {
-            grad = interpolateColor(rainbow[idx], rainbow[idx + 1], (t * (numColors - 1)) - idx);
+        if (idx >= numColors - 1) {
+            grad = Color_copy(rainbow[numColors - 1]);
         } else {
-            grad = rainbow[idx];
+            float mix = pos - (float)idx;
+            grad = interpolateColor(rainbow[idx], rainbow[idx + 1], mix);
         }
-        ColumnGraphBar* graph_bar = ColumnGraphBar_new(i, grad, graph->size.height, bars_count);
+
+        ColumnGraphBar* graph_bar = ColumnGraphBar_new((float)(i + 1), grad, graph->size.height, bars_count);
         List_push(graph->bars, graph_bar);
         FlexContainer_addElement(graph->container, graph_bar->element, 1.f, 1.f, -1.f);
     }

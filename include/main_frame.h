@@ -14,6 +14,7 @@ struct MainFrame {
     ColumnGraph** graph;
     Container* popup;
     int graph_count;
+    int bar_count;
 
     bool showSettings;
     bool box_animating;

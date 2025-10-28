@@ -34,7 +34,7 @@ void Box_destroy(Box* self) {
 void Box_render(Box* self, SDL_Renderer* renderer) {
     if (!self || !renderer) return;
 
-    SDL_FRect rect = self->center ? SDL_CreateRect(self->position->x, self->position->y, self->size.width, self->size.height) :
+    SDL_FRect rect = self->center ? SDL_CreateRect(self->position->x, self->position->y, self->size.width, self->size.height, self->center) :
                 (SDL_FRect){ self->position->x, self->position->y, self->size.width, self->size.height };
 
     if (self->border_size > 0 && self->border_color) {

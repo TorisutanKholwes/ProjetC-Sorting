@@ -32,7 +32,7 @@ void Color_destroy(Color* color);
 void safe_free(void** ptr);
 int init();
 #define SDL_RECT_NULL (SDL_FRect) { -1.0f, -1.0f, -1.0f, -1.0f }
-SDL_FRect SDL_CreateRect(float x, float y, float w, float h);
+SDL_FRect SDL_CreateRect(float x, float y, float w, float h, bool from_center);
 void SDL_RenderStroke(SDL_Renderer* renderer, const SDL_FRect* rect, float thickness);
 
 char* Strdup(const char* str);

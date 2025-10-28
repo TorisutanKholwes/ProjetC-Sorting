@@ -58,10 +58,15 @@ int init() {
     return EXIT_SUCCESS;
 }
 
-SDL_FRect SDL_CreateRect(const float x, const float y, const float w, const float h) {
+SDL_FRect SDL_CreateRect(const float x, const float y, const float w, const float h, bool from_center) {
     SDL_FRect rect = { 0 };
     rect.w = w;
     rect.h = h;
+    if (!from_center) {
+        rect.x = x;
+        rect.y = y;
+        return rect;
+    }
     rect.x = fmaxf(0, x - (w / 2));
     rect.y = fmaxf(0, y - (h / 2));
 

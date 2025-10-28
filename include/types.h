@@ -59,10 +59,13 @@ typedef enum FlexAlign FlexAlign;
 
 typedef struct Image Image;
 
+typedef struct ColumnGraph ColumnGraph;
+typedef struct ColumnGraphBar ColumnGraphBar;
+
+typedef struct Container Container;
+
 // Frames
 typedef struct MainFrame MainFrame;
-typedef struct SecondFrame SecondFrame;
-typedef struct LayoutTestFrame LayoutTestFrame;
 
 // Structure who's not used as a pointer elsewhere
 typedef struct {
@@ -77,3 +80,5 @@ typedef void (*FrameUpdateFunc)(void* data);
 typedef void (*FrameRenderFunc)(SDL_Renderer* renderer, void* data);
 
 typedef void (*DestroyFunc)(void* data);
+
+typedef bool (*ColumnsHoverFunc)(void* data, float value);

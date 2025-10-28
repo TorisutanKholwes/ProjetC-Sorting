@@ -39,3 +39,5 @@ void Input_addEventHandler(Input* input, Uint32 eventType, EventHandlerFunc func
 void Input_removeEventHandler(Input* input, Uint32 eventType);
 void Input_removeOneEventHandler(Input* input, Uint32 eventType, void* data);
 void Input_clearEventHandlers(Input* input);
+
+void Input_getMousePosition(Input* input, float* x, float* y);

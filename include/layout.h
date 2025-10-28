@@ -29,7 +29,8 @@ enum FlexAlign {
     FLEX_ALIGN_START,
     FLEX_ALIGN_END,
     FLEX_ALIGN_CENTER,
-    FLEX_ALIGN_STRETCH
+    FLEX_ALIGN_STRETCH,
+    NO_FLEX_ALIGN
 };
 
 struct FlexItem {
@@ -61,3 +62,4 @@ void FlexContainer_setAlignItems(FlexContainer* container, FlexAlign align);
 void FlexContainer_setGap(FlexContainer* container, float gap);
 void FlexContainer_addElement(FlexContainer* container, Element* element, float flex_grow, float flex_shrink, float flex_basis);
 void FlexContainer_layout(FlexContainer* container);
+void FlexContainer_clear(FlexContainer* container);

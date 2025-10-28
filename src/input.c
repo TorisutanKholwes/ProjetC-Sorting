@@ -100,7 +100,7 @@ void Input_update(Input *input) {
             ListIterator *it = ListIterator_new(handlers);
             while (ListIterator_hasNext(it)) {
                 const EventHandler *handler = ListIterator_next(it);
-                if (handler) {
+                if (handler && handler->func) {
                     handler->func(input, &evt, handler->data);
                 }
             }
@@ -116,7 +116,7 @@ void Input_update(Input *input) {
                     ListIterator *it = ListIterator_new(handlers);
                     while (ListIterator_hasNext(it)) {
                         const EventHandler *handler = ListIterator_next(it);
-                        if (handler) {
+                        if (handler && handler->func) {
                             handler->func(input, &evt, handler->data);
                         }
                     }
@@ -298,4 +298,11 @@ void Input_removeOneEventHandler(Input *input, Uint32 eventType, void *data) {
 void Input_clearEventHandlers(Input *input) {
     if (!input) return;
     Map_clear(input->eventHandlers);
+}
+
+void Input_getMousePosition(Input* input, float* x, float* y) {
+    if (!input) return;
+    if (!input->mousePos) return;
+    if (x) *x = input->mousePos->x;
+    if (y) *y = input->mousePos->y;
 }

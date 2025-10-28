@@ -6,6 +6,7 @@
 
 #include "logger.h"
 #include "button.h"
+#include "container.h"
 #include "geometry.h"
 #include "image.h"
 #include "input_box.h"
@@ -97,6 +98,18 @@ Element* Element_fromImage(Image* image, const char* id) {
     return element;
 }
 
+Element* Element_fromContainer(Container* container, const char* id) {
+    Element* element = calloc(1, sizeof(Element));
+    if (!element) {
+        error("Element_fromText: Failed to allocate memory for Element");
+        return NULL;
+    }
+    element->type = ELEMENT_TYPE_CONTAINER;
+    element->id = Strdup(id);
+    element->data.container = container;
+    return element;
+}
+
 void Element_destroy(Element* element) {
     if (!element) return;
 
@@ -121,6 +134,9 @@ void Element_destroy(Element* element) {
             break;
         case ELEMENT_TYPE_IMAGE:
             Image_destroy(element->data.image);
+            break;
+        case ELEMENT_TYPE_CONTAINER:
+            Container_destroy(element->data.container);
             break;
         default:
             log_message(LOG_LEVEL_WARN, "Element_destroy: Unknown element type %d", element->type);
@@ -161,6 +177,9 @@ void Element_render(Element* element, SDL_Renderer* renderer) {
         case ELEMENT_TYPE_IMAGE:
             Image_render(element->data.image, renderer);
             break;
+        case ELEMENT_TYPE_CONTAINER:
+            Container_render(element->data.container, renderer);
+            break;
         default:
             log_message(LOG_LEVEL_WARN, "Element_render: Unknown element type %d", element->type);
             break;
@@ -181,6 +200,7 @@ void Element_update(Element* element) {
         case ELEMENT_TYPE_CIRCLE:
         case ELEMENT_TYPE_POLYGON:
         case ELEMENT_TYPE_IMAGE:
+        case ELEMENT_TYPE_CONTAINER:
             // No update needed for text currently
             break;
         default:
@@ -203,6 +223,7 @@ void Element_focus(Element* element) {
         case ELEMENT_TYPE_CIRCLE:
         case ELEMENT_TYPE_POLYGON:
         case ELEMENT_TYPE_IMAGE:
+        case ELEMENT_TYPE_CONTAINER:
             break;
         default:
             log_message(LOG_LEVEL_WARN, "Element_focus: Unknown element type %d", element->type);
@@ -224,6 +245,7 @@ void Element_unfocus(Element* element) {
         case ELEMENT_TYPE_CIRCLE:
         case ELEMENT_TYPE_POLYGON:
         case ELEMENT_TYPE_IMAGE:
+        case ELEMENT_TYPE_CONTAINER:
             break;
         default:
             log_message(LOG_LEVEL_WARN, "Element_unfocus: Unknown element type %d", element->type);
@@ -297,7 +319,99 @@ char* ElementType_toString(ElementType type) {
             return "POLYGON";
         case ELEMENT_TYPE_IMAGE:
             return "IMAGE";
+        case ELEMENT_TYPE_CONTAINER:
+            return "CONTAINER";
         default:
             return "UNKNOWN";
+    }
+}
+
+void Element_setPosition(Element *element, float x, float y) {
+    if (!element) return;
+
+    switch (element->type) {
+        case ELEMENT_TYPE_BUTTON:
+            Button_setPosition(element->data.button, x, y);
+            break;
+        case ELEMENT_TYPE_TEXT:
+            Text_setPosition(element->data.text, x, y);
+            break;
+        case ELEMENT_TYPE_INPUT: {
+            InputBox *input = element->data.input_box;
+            input->rect.x = x == -1 ? input->rect.x : x;
+            input->rect.y = y == -1 ? input->rect.y : y;
+            break;
+        }
+        case ELEMENT_TYPE_BOX: {
+            Box *box = element->data.box;
+            if (box->position) {
+                box->position->x = x == -1 ? box->position->x : x;
+                box->position->y = y == -1 ? box->position->y : y;
+            }
+            break;
+        }
+        case ELEMENT_TYPE_CIRCLE: {
+            Circle *circle = element->data.circle;
+            if (circle->center) {
+                circle->center->x = x == -1 ? circle->center->x : x;
+                circle->center->y = y == -1 ? circle->center->y : y;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+void Element_getPosition(Element* element, float *x, float *y) {
+    if (!element) {
+        *x = 0;
+        *y = 0;
+        return;
+    }
+
+    switch (element->type) {
+        case ELEMENT_TYPE_BUTTON:
+            Button *button = element->data.button;
+            *x = button->rect.x;
+            *y = button->rect.y;
+            break;
+        case ELEMENT_TYPE_TEXT:
+            Text *text = element->data.text;
+            *x = text->position->x;
+            *y = text->position->y;
+            break;
+        case ELEMENT_TYPE_INPUT: {
+            InputBox *input = element->data.input_box;
+            *x = input->rect.x;
+            *y = input->rect.y;
+            break;
+        }
+        case ELEMENT_TYPE_BOX: {
+            Box *box = element->data.box;
+            if (box->position) {
+                *x = box->position->x;
+                *y = box->position->y;
+            } else {
+                *x = 0;
+                *y = 0;
+            }
+            break;
+        }
+        case ELEMENT_TYPE_CIRCLE: {
+            Circle *circle = element->data.circle;
+            if (circle->center) {
+                *x = circle->center->x;
+                *y = circle->center->y;
+            } else {
+                *x = 0;
+                *y = 0;
+            }
+            break;
+        }
+        default:
+            *x = 0;
+            *y = 0;
+            break;
     }
 }

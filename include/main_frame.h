@@ -10,6 +10,17 @@
 struct MainFrame {
     List* elements;
     App* app;
+
+    ColumnGraph** graph;
+    Container* popup;
+    int graph_count;
+
+    bool showSettings;
+    bool box_animating;
+
+    float box_anim_progress;
+    float box_start_x;
+    float box_target_x;
 };
 
 MainFrame* MainFrame_new(App* app);

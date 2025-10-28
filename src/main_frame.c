@@ -5,26 +5,28 @@
 #include "main_frame.h"
 
 #include "app.h"
-#include "button.h"
-#include "color.h"
+#include "column_graphic.h"
 #include "element.h"
 #include "frame.h"
 #include "geometry.h"
-#include "image.h"
 #include "input.h"
-#include "layout_test_frame.h"
+#include "layout.h"
 #include "logger.h"
 #include "list.h"
-#include "resource_manager.h"
-#include "second_frame.h"
-#include "style.h"
 #include "utils.h"
+#include "color.h"
+#include "container.h"
+#include "resource_manager.h"
+#include "style.h"
 #include "text.h"
 
 static void MainFrame_addElements(MainFrame* self, App* app);
-static void MainFrame_goToNextPage(Input* input, SDL_Event* evt, void* data);
-static void MainFrame_onWindowResized(Input* input, SDL_Event* evt, void* data);
-static void MainFrame_onRuneN(Input* input, SDL_Event* evt, void* data);
+static void MainFrame_onEscape(Input* input, SDL_Event* evt, MainFrame* self);
+static void MainFrame_onRuneS(Input* input, SDL_Event* evt, MainFrame* self);
+static void MainFrame_onRuneP(Input* input, SDL_Event* evt, MainFrame* self);
+static void MainFrame_onRuneM(Input* input, SDL_Event* evt, MainFrame* self);
+static bool MainFrame_createPopup(MainFrame* self, float value);
+static bool MainFrame_removePopup(MainFrame* self, float value);
 
 MainFrame* MainFrame_new(App* app) {
     MainFrame* self = calloc(1, sizeof(MainFrame));
@@ -40,6 +42,24 @@ MainFrame* MainFrame_new(App* app) {
         safe_free((void**)&self);
         return NULL;
     }
+
+    int w, h;
+    SDL_GetWindowSize(app->window, &w, &h);
+
+    self->graph_count = 1;
+    self->graph = calloc(self->graph_count, sizeof(ColumnGraph*));
+    if (!self->graph) {
+        error("Failed to allocate memory for ColumnGraph array in MainFrame");
+        MainFrame_destroy(self);
+        return NULL;
+    }
+    for (int i = 0; i < self->graph_count; i++) {
+        self->graph[i] = ColumnGraph_new(w, h, Position_new(0, 0), app->input, self, (ColumnsHoverFunc) MainFrame_createPopup, (ColumnsHoverFunc) MainFrame_removePopup);
+        ColumnGraph_initBars(self->graph[i], 100);
+    }
+
+    self->popup = NULL;
+
     MainFrame_addElements(self, app);
 
     return self;
@@ -49,50 +69,35 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
     ListIterator* it = ListIterator_new(self->elements);
     while (ListIterator_hasNext(it)) {
         Element* element = ListIterator_next(it);
-        Element_destroy(element);
+        if (String_equals(element->id, "settings")) {
+            Element_destroy(element);
+        }
     }
     ListIterator_destroy(it);
     List_clear(self->elements);
     int w, h;
     SDL_GetWindowSize(app->window, &w, &h);
 
-    Image* image = Image_load(self->app, "esiea.png", Position_new(0, 0), false);
-    Image_setRatio(image, 0.4f);
-    List_push(self->elements, Element_fromImage(image, NULL));
-
-    Text* title = Text_newf(app->renderer,
-        TextStyle_new(ResourceManager_getDefaultBoldFont(app->manager, 40),
-            40,
-            COLOR_WHITE,
-            TTF_STYLE_NORMAL),
-            Position_new(w / 2, 100), true,
-            "Welcome to %s!", APP_NAME);
-    List_push(self->elements, Element_fromText(title, NULL));
-
-    Polygon* octagon = Polygon_newEmpty(0, COLOR_YELLOW, NULL);
-    for (int i = 0; i < 8; i++) {
-        int octagon_size = 100;
-        Polygon_addVertex(octagon,
-                          Position_new(
-                              w / 2 + octagon_size * cos(i * M_PI / 4),
-                              h / 2 + octagon_size * sin(i * M_PI / 4)
-                          )
-        );
+    for (int i = 0; i < self->graph_count; i++) {
+        ColumnGraph* graph = self->graph[i];
+        ListIterator* graphIt = ListIterator_new(graph->bars);
+        while (ListIterator_hasNext(graphIt)) {
+            ColumnGraphBar* bar = ListIterator_next(graphIt);
+            List_push(self->elements, bar->element);
+        }
+        ListIterator_destroy(graphIt);
+        FlexContainer_layout(graph->container);
     }
-    List_push(self->elements, Element_fromPolygon(octagon, NULL));
 
-    Button* button = Button_new(app,
-        Position_new(w / 2, h / 2 + 200),
-        ButtonStyle_new(FullStyleColors_new(COLOR_WHITE, COLOR_GRAY(150), COLOR_BLACK),
-            2,
-            ResourceManager_getDefaultFont(app->manager, 24),
-            TTF_STYLE_NORMAL,
-            24,
-            EdgeInsets_newSymmetric(10, 20)),
-        self,
-        "Go to next page");
-    Button_onClick(button, MainFrame_goToNextPage);
-    List_push(self->elements, Element_fromButton(button, NULL));
+    float settingsWidth = 200;
+    Container* container = Container_new(w, 0, settingsWidth, h, Color_rgba(0, 0, 0, 200));
+    Container_addChild(container, Element_fromText(Text_new(app->renderer,
+        TextStyle_new(ResourceManager_getDefaultBoldFont(app->manager, 36), 36, COLOR_WHITE, TTF_STYLE_NORMAL),
+        Position_new(w + 10, 10),
+        false,
+        "Settings"
+        ), NULL));
+    List_push(self->elements, Element_fromContainer(container, "settings"));
 }
 
 void MainFrame_destroy(MainFrame* self) {
@@ -105,24 +110,51 @@ void MainFrame_destroy(MainFrame* self) {
 
 void MainFrame_render(SDL_Renderer* renderer, MainFrame* self) {
     Element_renderList(self->elements, renderer);
+
+    if (self->popup) {
+        Container_render(self->popup, renderer);
+    }
 }
 
 void MainFrame_update(MainFrame* self) {
+    if (self->box_animating) {
+        self->box_anim_progress += 0.03f;
+        if (self->box_anim_progress >= 1.f) {
+            self->box_animating = false;
+            self->box_anim_progress = 1.f;
+        }
+        Element* settings = Element_getById(self->elements, "settings");
+        Container* container = settings->data.container;
+        container->box->position->x = self->box_start_x + (self->box_target_x - self->box_start_x) * self->box_anim_progress;
+        ListIterator* it = ListIterator_new(container->children);
+        while (ListIterator_hasNext(it)) {
+            Element* child = ListIterator_next(it);
+            float x, y;
+            Element_getPosition(child, &x, &y);
+            x = self->box_start_x + (self->box_target_x - self->box_start_x) * self->box_anim_progress + 10;
+            Element_setPosition(child, x, y);
+        }
+    }
+
     Element_updateList(self->elements);
 }
 
 void MainFrame_focus(MainFrame* self) {
     Element_focusList(self->elements);
 
-    Input_addEventHandler(self->app->input, SDL_EVENT_WINDOW_RESIZED, MainFrame_onWindowResized, self);
-    Input_addKeyEventHandler(self->app->input, SDLK_N, MainFrame_onRuneN, self);
+    Input_addKeyEventHandler(self->app->input, SDLK_ESCAPE, (EventHandlerFunc) MainFrame_onEscape, self);
+    Input_addKeyEventHandler(self->app->input, SDLK_S, (EventHandlerFunc) MainFrame_onRuneS, self);
+    Input_addKeyEventHandler(self->app->input, SDLK_P, (EventHandlerFunc) MainFrame_onRuneP, self);
+    Input_addKeyEventHandler(self->app->input, SDLK_M, (EventHandlerFunc) MainFrame_onRuneM, self);
 }
 
 void MainFrame_unfocus(MainFrame* self) {
     Element_unfocusList(self->elements);
 
-    Input_removeOneEventHandler(self->app->input, SDL_EVENT_WINDOW_RESIZED, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDLK_N, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDLK_ESCAPE, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDLK_S, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDLK_P, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDLK_M, self);
 }
 
 Frame* MainFrame_getFrame(MainFrame* self) {
@@ -136,21 +168,72 @@ Frame* MainFrame_getFrame(MainFrame* self) {
     return frame;
 }
 
-static void MainFrame_goToNextPage(Input* input, SDL_Event* evt, void* data) {
-    Button* button = data;
-    if (button && button->parent) {
-        MainFrame* self = button->parent;
-        SecondFrame* second = SecondFrame_new(self->app);
-        App_addFrame(self->app, SecondFrame_getFrame(second));
+static void MainFrame_onEscape(Input* input, SDL_Event* evt, MainFrame* self) {
+    int w, h;
+    SDL_GetWindowSize(self->app->window, &w, &h);
+    self->box_animating = true;
+    self->showSettings = !self->showSettings;
+    self->box_anim_progress = 0.f;
+    Element* settings = Element_getById(self->elements, "settings");
+    Container* container = settings->data.container;
+    self->box_start_x = container->box->position->x;
+    self->box_target_x = self->showSettings ? w - 200 : w;
+    if (self->showSettings && self->popup) {
+        MainFrame_removePopup(self, 0);
     }
 }
 
-static void MainFrame_onWindowResized(Input* input, SDL_Event* evt, void* data) {
-    MainFrame* self = data;
+static void MainFrame_onRuneS(Input* input, SDL_Event* evt, MainFrame* self) {
+    for (int i = 0; i < self->graph_count; i++) {
+        ColumnGraph_shuffleBars(self->graph[i]);
+    }
     MainFrame_addElements(self, self->app);
 }
 
-static void MainFrame_onRuneN(Input* input, SDL_Event* evt, void* data) {
-    MainFrame* self = data;
-    App_addFrame(self->app, LayoutTestFrame_getFrame(LayoutTestFrame_new(self->app)));
+static bool MainFrame_createPopup(MainFrame* self, float value) {
+    if (!self || self->popup || self->showSettings) return false;
+    int w, h;
+    SDL_GetWindowSize(self->app->window, &w, &h);
+    float x, y;
+    Input_getMousePosition(self->app->input, &x, &y);
+    float popupX = x - 50 < 0 ? 0 : x - 50 + 120 > w ? w - 120 : x - 50;
+    float popupY = y - 50 < 0 ? 0 : y - 50 + 40 > h ? h - 40 : y - 50;
+    self->popup = Container_new(popupX, popupY, 120, 40, Color_copy(COLOR_BLACK));
+    Container_addChild(self->popup, Element_fromText(Text_newf(self->app->renderer,
+        TextStyle_new(ResourceManager_getDefaultBoldFont(self->app->manager, 20), 20, COLOR_WHITE, TTF_STYLE_NORMAL),
+        Position_new(popupX, popupY),
+        false,
+        "Value : %d", (int)value
+        ), NULL));
+    return true;
+}
+
+static bool MainFrame_removePopup(MainFrame* self, float _) {
+    if (!self) return false;
+    if (self->popup) {
+        Container_destroy(self->popup);
+        self->popup = NULL;
+    }
+    return true;
+}
+
+static void MainFrame_onRuneP(Input* input, SDL_Event* evt, MainFrame* self) {
+    self->graph_count++;
+    for (int i = 0; i < self->graph_count-1; i++) {
+        ColumnGraph_destroy(self->graph[i]);
+    }
+    self->graph = realloc(self->graph, self->graph_count * sizeof(ColumnGraph*));
+    int w, h;
+    SDL_GetWindowSize(self->app->window, &w, &h);
+    for (int i = 0; i < self->graph_count; i++) {
+        float width = w / 2;
+        float height = h / (self->graph_count / 2);
+        self->graph[i] = ColumnGraph_new(width, height, Position_new((i % 2) * width, (i / 2) * height), input, self, (ColumnsHoverFunc) MainFrame_createPopup, (ColumnsHoverFunc) MainFrame_removePopup);
+        ColumnGraph_initBars(self->graph[i], 100);
+    }
+    MainFrame_addElements(self, self->app);
+}
+
+static void MainFrame_onRuneM(Input* input, SDL_Event* evt, MainFrame* self) {
+
 }

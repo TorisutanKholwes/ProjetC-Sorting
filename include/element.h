@@ -16,7 +16,9 @@ enum ElementType {
     ELEMENT_TYPE_CIRCLE,
     ELEMENT_TYPE_POLYGON,
 
-    ELEMENT_TYPE_IMAGE
+    ELEMENT_TYPE_IMAGE,
+
+    ELEMENT_TYPE_CONTAINER
 };
 
 struct Element {
@@ -30,6 +32,7 @@ struct Element {
         Circle* circle;
         Polygon* polygon;
         Image* image;
+        Container* container;
     } data;
 };
 
@@ -40,6 +43,7 @@ Element* Element_fromBox(Box* box, const char* id);
 Element* Element_fromCircle(Circle* circle, const char* id);
 Element* Element_fromPolygon(Polygon* polygon, const char* id);
 Element* Element_fromImage(Image* image, const char* id);
+Element* Element_fromContainer(Container* container, const char* id);
 
 void Element_destroy(Element* element);
 void Element_destroyList(List* list);
@@ -57,3 +61,5 @@ void Element_unfocusList(List* list);
 Element* Element_getById(List* list, const char* id);
 
 char* ElementType_toString(ElementType type);
+void Element_setPosition(Element *element, float x, float y);
+void Element_getPosition(Element* element, float *x, float *y);

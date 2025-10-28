@@ -390,6 +390,16 @@ void List_sort(List* list, ListSortType sortType) {
     }
 }
 
+void List_shuffle(List* list) {
+    if (!list || list->size < 2) return;
+
+    size_t n = list->size;
+    for (size_t i = n - 1; i > 0; i--) {
+        size_t j = rand() % (i + 1);
+        List_swap(list, i, j);
+    }
+}
+
 ListIterator *ListIterator_new(List *list) {
     ListIterator *iterator = calloc(1, sizeof(ListIterator));
     if (!iterator) {

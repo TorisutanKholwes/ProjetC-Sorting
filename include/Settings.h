@@ -6,10 +6,10 @@
 #pragma once
 
 // Define application settings
-#define APP_NAME "SDL3 Template"
+#define APP_NAME "Sorting Project C"
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
-#define WINDOW_TITLE "SDL3 Template Application"
+#define WINDOW_TITLE "Sorting Project C Visualizer"
 #define FULLSCREEN 0
 #define FRAME_RATE 60
 

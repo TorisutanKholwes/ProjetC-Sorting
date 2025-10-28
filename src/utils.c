@@ -140,6 +140,15 @@ SDL_Color Color_toSDLColor(Color* color) {
     return (SDL_Color){ color->r, color->g, color->b, color->a };
 }
 
+Color* interpolateColor(Color* start, Color* end, float t) {
+    return Color_rgba(
+        start->r + (end->r - start->r) * t,
+        start->g + (end->g - start->g) * t,
+        start->b + (end->b - start->b) * t,
+        start->a + (end->a - start->a) * t
+    );
+}
+
 char* Strdup(const char* str) {
     if (!str) return NULL;
     size_t len = strlen(str);
@@ -197,4 +206,8 @@ bool String_isNumeric(const char* str) {
     char* endPtr;
     strtof(str, &endPtr);
     return endPtr != str && *endPtr == '\0';
+}
+
+int modulo(int a, int b) {
+    return ((a % b) + b) % b;
 }

@@ -15,6 +15,7 @@
 
 #if 1
 int main() {
+    srand(time(NULL));
     log_message(LOG_LEVEL_INFO, "Starting up app %s", APP_NAME);
     log_message(LOG_LEVEL_DEBUG, "Debug mode is enabled");
 
@@ -134,7 +135,31 @@ int main() {
 #endif
 
 #if 0
+void print_grid(int x) {
+    int n = (int)ceil(sqrt(x));
+    int rows = n;
+    int cols = (x + n - 1) / n; // répartit x éléments sur n lignes
+
+    int count = 0;
+    for (int i = 0; i < rows && count < x; i++) {
+        printf("[ ");
+        for (int j = 0; j < cols && count < x; j++) {
+            printf("[ ] ");
+            count++;
+        }
+        printf("]\n");
+    }
+}
+
 int main() {
+    print_grid(1);
+    printf("\n");
+    print_grid(2);
+    printf("\n");
+    print_grid(4);
+    printf("\n");
+    print_grid(7);
+
 }
 #endif
 

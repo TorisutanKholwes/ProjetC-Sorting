@@ -26,6 +26,7 @@ Color* Color_rgba(int r, int g, int b, int a);
 Color* Color_hsv(float h, float s, float v);
 Color* Color_copy(Color* color);
 SDL_Color Color_toSDLColor(Color* color);
+Color* interpolateColor(Color* start, Color* end, float t);
 void Color_destroy(Color* color);
 
 void safe_free(void** ptr);
@@ -40,3 +41,5 @@ bool String_equals(const char* a, const char* b);
 int String_parseInt(const char* str, int defaultValue);
 float String_parseFloat(const char* str, float defaultValue);
 bool String_isNumeric(const char* str);
+
+int modulo(int a, int b);

@@ -4,6 +4,7 @@
  */
 #include "style.h"
 
+#include "color.h"
 #include "logger.h"
 #include "resource_manager.h"
 #include "utils.h"
@@ -237,9 +238,9 @@ Theme* Theme_default(ResourceManager* resource_manager) {
         error("Failed to allocate memory for default Theme");
         return NULL;
     }
-    theme->background = Color_rgb(30, 144, 255);
+    theme->background = COLOR_GRAY(50);
     theme->primary = Color_rgb(255, 255, 255);
-    theme->secondary = Color_rgb(200, 200, 200);
+    theme->secondary = COLOR_GRAY(200);
     theme->title_style = TextStyle_new(ResourceManager_getDefaultBoldFont(resource_manager, 48), 48, Color_rgb(255, 255, 255), TTF_STYLE_UNDERLINE);
     theme->body_style = TextStyle_default(resource_manager);
     theme->button_style = ButtonStyle_default(resource_manager);

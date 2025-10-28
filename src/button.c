@@ -121,7 +121,7 @@ void Button_update(Button* button) {
 }
 
 void Button_unFocus(Button* button) {
-    log_message(LOG_LEVEL_DEBUG, "Button %s unfocused", button->text->text);
+    //log_message(LOG_LEVEL_DEBUG, "Button %s unfocused", button->text->text);
     button->focused = false;
     Input_removeOneEventHandler(button->input, SDL_EVENT_MOUSE_MOTION, button);
     Input_removeOneEventHandler(button->input, SDL_EVENT_MOUSE_BUTTON_DOWN, button);
@@ -129,7 +129,7 @@ void Button_unFocus(Button* button) {
 }
 
 void Button_focus(Button* button) {
-    log_message(LOG_LEVEL_DEBUG, "Button %s focused", button->text->text);
+    //log_message(LOG_LEVEL_DEBUG, "Button %s focused", button->text->text);
     button->focused = true;
     Input_addEventHandler(button->input, SDL_EVENT_MOUSE_MOTION, Button_checkHover, button);
     Input_addEventHandler(button->input, SDL_EVENT_MOUSE_BUTTON_DOWN, Button_checkPressed, button);

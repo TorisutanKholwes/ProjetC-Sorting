@@ -156,6 +156,59 @@ ButtonStyle* ButtonStyle_defaultFromTheme(Theme* theme, ResourceManager* resourc
     return style;
 }
 
+ButtonStyle* ButtonStyle_deepCopy(ButtonStyle* style) {
+    return ButtonStyle_new(
+        FullStyleColors_new(
+            Color_copy(style->colors->background),
+            Color_copy(style->colors->border),
+            Color_copy(style->colors->text)),
+        style->border_width,
+        style->text_font,
+        style->text_style,
+        style->text_size,
+        EdgeInsets_new(
+            style->paddings->top,
+            style->paddings->bottom,
+            style->paddings->left,
+            style->paddings->right));
+}
+
+ButtonStyle* SelectStyle_default(ResourceManager* resource_manager) {
+    ButtonStyle* style = calloc(1, sizeof(ButtonStyle));
+    if (!style) {
+        error("Failed to allocate memory for default ButtonStyle");
+        return NULL;
+    }
+    style->border_width = 2;
+    style->text_size = 24;
+    style->text_font = ResourceManager_getDefaultFont(resource_manager, style->text_size);
+    style->text_style = TTF_STYLE_NORMAL;
+    style->colors = FullStyleColors_new(
+    Color_fromHex("#1a2a4a"),
+    Color_fromHex("#3a4a7a"),
+    Color_rgb(255, 255, 255));
+    style->paddings = EdgeInsets_newSymmetric(10, 60);
+    return style;
+}
+
+ButtonStyle* SelectStyle_defaultFromTheme(Theme* theme, ResourceManager* resource_manager) {
+    ButtonStyle* style = calloc(1, sizeof(ButtonStyle));
+    if (!style) {
+        error("Failed to allocate memory for default ButtonStyle from Theme");
+        return NULL;
+    }
+    style->border_width = 2;
+    style->text_size = 32;
+    style->text_font = ResourceManager_getDefaultFont(resource_manager, style->text_size);
+    style->text_style = TTF_STYLE_NORMAL;
+    style->colors = FullStyleColors_new(
+        theme->secondary,
+        theme->primary,
+        theme->background);
+    style->paddings = EdgeInsets_newSymmetric(10, 20);
+    return style;
+}
+
 InputBoxStyle* InputBoxStyle_new(TTF_Font* font, int text_size, TTF_FontStyleFlags style, FullStyleColors* colors) {
     InputBoxStyle* self = calloc(1, sizeof(InputBoxStyle));
     if (!self) {

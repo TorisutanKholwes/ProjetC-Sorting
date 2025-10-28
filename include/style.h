@@ -51,6 +51,10 @@ ButtonStyle* ButtonStyle_new(FullStyleColors* colors, int border_width, TTF_Font
 void ButtonStyle_destroy(ButtonStyle* style);
 ButtonStyle* ButtonStyle_default(ResourceManager* resource_manager);
 ButtonStyle* ButtonStyle_defaultFromTheme(Theme* theme, ResourceManager* resource_manager);
+ButtonStyle* ButtonStyle_deepCopy(ButtonStyle* style);
+
+ButtonStyle* SelectStyle_default(ResourceManager* resource_manager);
+ButtonStyle* SelectStyle_defaultFromTheme(Theme* theme, ResourceManager* resource_manager);
 
 struct InputBoxStyle {
     TTF_Font* font;

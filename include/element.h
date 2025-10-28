@@ -11,6 +11,7 @@ enum ElementType {
     ELEMENT_TYPE_BUTTON,
     ELEMENT_TYPE_TEXT,
     ELEMENT_TYPE_INPUT,
+    ELEMENT_TYPE_SELECT,
 
     ELEMENT_TYPE_BOX,
     ELEMENT_TYPE_CIRCLE,
@@ -33,6 +34,7 @@ struct Element {
         Polygon* polygon;
         Image* image;
         Container* container;
+        Select* select;
     } data;
 };
 
@@ -44,6 +46,7 @@ Element* Element_fromCircle(Circle* circle, const char* id);
 Element* Element_fromPolygon(Polygon* polygon, const char* id);
 Element* Element_fromImage(Image* image, const char* id);
 Element* Element_fromContainer(Container* container, const char* id);
+Element* Element_fromSelect(Select* select, const char* id);
 
 void Element_destroy(Element* element);
 void Element_destroyList(List* list);

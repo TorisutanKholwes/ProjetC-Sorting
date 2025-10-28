@@ -11,6 +11,7 @@
 #include "image.h"
 #include "input_box.h"
 #include "list.h"
+#include "select.h"
 #include "text.h"
 #include "utils.h"
 
@@ -110,6 +111,18 @@ Element* Element_fromContainer(Container* container, const char* id) {
     return element;
 }
 
+Element* Element_fromSelect(Select* select, const char* id) {
+    Element* element = calloc(1, sizeof(Element));
+    if (!element) {
+        error("Element_fromText: Failed to allocate memory for Element");
+        return NULL;
+    }
+    element->type = ELEMENT_TYPE_SELECT;
+    element->id = Strdup(id);
+    element->data.select = select;
+    return element;
+}
+
 void Element_destroy(Element* element) {
     if (!element) return;
 
@@ -137,6 +150,9 @@ void Element_destroy(Element* element) {
             break;
         case ELEMENT_TYPE_CONTAINER:
             Container_destroy(element->data.container);
+            break;
+        case ELEMENT_TYPE_SELECT:
+            Select_destroy(element->data.select);
             break;
         default:
             log_message(LOG_LEVEL_WARN, "Element_destroy: Unknown element type %d", element->type);
@@ -180,6 +196,9 @@ void Element_render(Element* element, SDL_Renderer* renderer) {
         case ELEMENT_TYPE_CONTAINER:
             Container_render(element->data.container, renderer);
             break;
+        case ELEMENT_TYPE_SELECT:
+            Select_render(element->data.select, renderer);
+            break;
         default:
             log_message(LOG_LEVEL_WARN, "Element_render: Unknown element type %d", element->type);
             break;
@@ -197,6 +216,9 @@ void Element_update(Element* element) {
             break;
         case ELEMENT_TYPE_CONTAINER:
             Container_update(element->data.container);
+            break;
+        case ELEMENT_TYPE_SELECT:
+            Select_update(element->data.select);
             break;
         case ELEMENT_TYPE_TEXT:
         case ELEMENT_TYPE_BOX:
@@ -223,6 +245,9 @@ void Element_focus(Element* element) {
         case ELEMENT_TYPE_CONTAINER:
             Container_focus(element->data.container);
             break;
+        case ELEMENT_TYPE_SELECT:
+            Select_focus(element->data.select);;
+            break;
         case ELEMENT_TYPE_TEXT:
         case ELEMENT_TYPE_BOX:
         case ELEMENT_TYPE_CIRCLE:
@@ -246,6 +271,9 @@ void Element_unfocus(Element* element) {
             break;
         case ELEMENT_TYPE_CONTAINER:
             Container_unFocus(element->data.container);
+            break;
+        case ELEMENT_TYPE_SELECT:
+            Select_unFocus(element->data.select);;
             break;
         case ELEMENT_TYPE_TEXT:
         case ELEMENT_TYPE_BOX:
@@ -327,6 +355,8 @@ char* ElementType_toString(ElementType type) {
             return "IMAGE";
         case ELEMENT_TYPE_CONTAINER:
             return "CONTAINER";
+        case ELEMENT_TYPE_SELECT:
+            return "SELECT";
         default:
             return "UNKNOWN";
     }
@@ -364,6 +394,9 @@ void Element_setPosition(Element *element, float x, float y) {
             }
             break;
         }
+        case ELEMENT_TYPE_SELECT:
+            Select_setPosition(element->data.select, x, y);
+            break;
         default:
             break;
     }
@@ -415,6 +448,11 @@ void Element_getPosition(Element* element, float *x, float *y) {
             }
             break;
         }
+        case ELEMENT_TYPE_SELECT:
+            Select* select = element->data.select;
+            *x = select->rect.x;
+            *y = select->rect.y;
+            break;
         default:
             *x = 0;
             *y = 0;

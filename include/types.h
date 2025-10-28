@@ -64,6 +64,8 @@ typedef struct ColumnGraphBar ColumnGraphBar;
 
 typedef struct Container Container;
 
+typedef struct Select Select;
+
 // Frames
 typedef struct MainFrame MainFrame;
 
@@ -71,6 +73,15 @@ typedef struct MainFrame MainFrame;
 typedef struct {
     float width, height;
 } Size;
+
+typedef enum ColumnGraphStyle {
+    GRAPH_RAINBOW,
+    GRAPH_WHITE,
+    GRAPH_BLACK,
+    GRAPH_GRAY,
+    GRAPH_BLACK_AND_WHITE,
+    GRAPH_STYLE_COUNT
+} ColumnGraphStyle;
 
 // Types of func
 typedef void (*EventHandlerFunc)(Input* input, SDL_Event* event, void* data);
@@ -82,3 +93,5 @@ typedef void (*FrameRenderFunc)(SDL_Renderer* renderer, void* data);
 typedef void (*DestroyFunc)(void* data);
 
 typedef bool (*ColumnsHoverFunc)(void* data, float value);
+
+typedef int (*CompareFunc)(const void* a, const void* b);

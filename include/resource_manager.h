@@ -12,7 +12,7 @@
 #define FONT_PATH    ASSETS_PATH "fonts/"
 #define SOUND_PATH   ASSETS_PATH "sounds/"
 
-#define DEFAULT_FONT "Montserrat.ttf"
+#define DEFAULT_FONT "Inter-Regular.ttf"
 #define DEFAULT_BOLD_FONT "Inter-Bold.ttf"
 
 struct ResourceManager {

@@ -8,11 +8,15 @@
 #include "utils.h"
 #include "text.h"
 #include "app.h"
+#include "color.h"
 #include "input.h"
 #include "style.h"
 
 static void Button_checkHover(Input* input, SDL_Event* evt, void* buttonData);
 static void Button_checkPressed(Input* input, SDL_Event* evt, void* buttonData);
+
+static void Button_styleHover(Button* button);
+static void Button_styleNormal(Button* button);
 
 Button* Button_new(const App* app, Position* position, bool from_center, ButtonStyle* style, void* parent, const char* label) {
     Button* button = calloc(1, sizeof(Button));
@@ -28,6 +32,7 @@ Button* Button_new(const App* app, Position* position, bool from_center, ButtonS
     Size size = Text_getSize(button->text);
     button->rect = SDL_CreateRect(position->x, position->y, size.width, size.height, from_center);
     button->style = style;
+    button->copy_style = ButtonStyle_deepCopy(style);
     button->input = app->input;
     button->hovered = false;
     button->pressed = false;
@@ -59,6 +64,7 @@ Button* Button_newf(const App* app, Position* position, bool from_center, Button
     const float y = position && !Position_isNull(position) ? position->y : 0;
     button->rect = SDL_CreateRect(x, y, size.width, size.height, from_center);
     button->style = style;
+    button->copy_style = ButtonStyle_deepCopy(style);
     button->input = app->input;
     button->hovered = false;
     button->pressed = false;
@@ -78,6 +84,7 @@ void Button_destroy(Button* button) {
 
     Text_destroy(button->text);
     ButtonStyle_destroy(button->style);
+    ButtonStyle_destroy(button->copy_style);
     safe_free((void**)&button);
 }
 
@@ -91,13 +98,40 @@ void Button_render(Button* button, SDL_Renderer* renderer) {
 
     EdgeInsets* paddings = button->style->paddings;
     SDL_SetRenderDrawColor(renderer, border->r, border->g, border->b, border->a);
-    SDL_FRect borderRect;
-    if (button->from_center) {
-        borderRect = (SDL_FRect) { button->rect.x - borderWidth - paddings->left, button->rect.y - borderWidth - paddings->top, button->rect.w + (borderWidth * 2)+ (paddings->right + paddings->left), button->rect.h + (borderWidth * 2) + (paddings->bottom + paddings->top)};
+    if (!Color_equals(button->style->colors->background, COLOR_TRANSPARENT)) {
+        SDL_FRect borderRect;
+        if (button->from_center) {
+            borderRect = (SDL_FRect) { button->rect.x - borderWidth - paddings->left, button->rect.y - borderWidth - paddings->top, button->rect.w + (borderWidth * 2)+ (paddings->right + paddings->left), button->rect.h + (borderWidth * 2) + (paddings->bottom + paddings->top)};
+        } else {
+            borderRect = (SDL_FRect) { button->rect.x, button->rect.y, button->rect.w + (borderWidth * 2)+ (paddings->right + paddings->left), button->rect.h + (borderWidth * 2) + (paddings->bottom + paddings->top)};
+        }
+        SDL_RenderFillRect(renderer, &borderRect);
     } else {
-        borderRect = (SDL_FRect) { button->rect.x, button->rect.y, button->rect.w + (borderWidth * 2)+ (paddings->right + paddings->left), button->rect.h + (borderWidth * 2) + (paddings->bottom + paddings->top)};
+        if (borderWidth > 0) {
+            float bx, by, bw, bh;
+            if (button->from_center) {
+                bx = button->rect.x - borderWidth - paddings->left;
+                by = button->rect.y - borderWidth - paddings->top;
+                bw = button->rect.w + (borderWidth * 2) + (paddings->right + paddings->left);
+                bh = button->rect.h + (borderWidth * 2) + (paddings->bottom + paddings->top);
+            } else {
+                bx = button->rect.x;
+                by = button->rect.y;
+                bw = button->rect.w + (borderWidth * 2) + (paddings->right + paddings->left);
+                bh = button->rect.h + (borderWidth * 2) + (paddings->bottom + paddings->top);
+            }
+
+            SDL_FRect top    = { bx, by, bw, (float)borderWidth };
+            SDL_FRect bottom = { bx, by + bh - borderWidth, bw, (float)borderWidth };
+            SDL_FRect left   = { bx, by, (float)borderWidth, bh };
+            SDL_FRect right  = { bx + bw - borderWidth, by, (float)borderWidth, bh };
+
+            SDL_RenderFillRect(renderer, &top);
+            SDL_RenderFillRect(renderer, &bottom);
+            SDL_RenderFillRect(renderer, &left);
+            SDL_RenderFillRect(renderer, &right);
+        }
     }
-    SDL_RenderFillRect(renderer, &borderRect);
 
     SDL_SetRenderDrawColor(renderer, fill->r, fill->g, fill->b, fill->a);
     SDL_FRect fillRect;
@@ -170,20 +204,34 @@ void Button_setParent(Button* button, void* parent) {
 
 static void Button_checkHover(Input* input, SDL_Event* evt, void* buttonData) {
     Button* button = buttonData;
-    bool isHovering = Input_mouseInRect(input, (SDL_FRect){
-        .x = (int)button->rect.x,
-        .y = (int)button->rect.y,
-        .w = (int)button->rect.w,
-        .h = (int)button->rect.h
-    });
+    SDL_FRect hoverRect;
+    if (button->from_center) {
+        hoverRect = (SDL_FRect){
+            .x = (int)button->rect.x - button->style->paddings->left,
+            .y = (int)button->rect.y - button->style->paddings->top,
+            .w = (int)button->rect.w + (button->style->paddings->right + button->style->paddings->left),
+            .h = (int)button->rect.h + (button->style->paddings->bottom + button->style->paddings->top)
+        };
+    } else {
+        hoverRect = (SDL_FRect) {
+            .x = (int)button->rect.x,
+            .y = (int)button->rect.y,
+            .w = (int)button->rect.w + (button->style->paddings->right + button->style->paddings->left),
+            .h = (int)button->rect.h + (button->style->paddings->bottom + button->style->paddings->top)
+        };
+    }
+    bool isHovering = Input_mouseInRect(input, hoverRect);
     if (isHovering && !button->hovered) {
         //log_message(LOG_LEVEL_DEBUG, "Button hovered");
         button->hovered = true;
+        Button_styleHover(button);
         if (button->onHover) {
             button->onHover(input, evt, buttonData);
         }
     } else if (!isHovering && button->hovered) {
+        //log_message(LOG_LEVEL_DEBUG, "Button hover ended");
         button->hovered = false;
+        Button_styleNormal(button);
         if (button->onHoverEnd) {
             button->onHoverEnd(input, evt, buttonData);
         }
@@ -212,6 +260,12 @@ static void Button_checkPressed(Input* input, SDL_Event* evt, void* buttonData) 
     }
 }
 
+Size Button_getSize(Button* button) {
+    float width = button->rect.w + (button->style->paddings->left + button->style->paddings->right) + (button->style->border_width * 2);
+    float height = button->rect.h + (button->style->paddings->top + button->style->paddings->bottom) + (button->style->border_width * 2);
+    return (Size) { width, height };
+}
+
 void Button_onClick(Button* button, EventHandlerFunc func) {
     button->onClick = func;
 }
@@ -222,4 +276,18 @@ void Button_onHover(Button* button, EventHandlerFunc func) {
 
 void Button_onHoverEnd(Button* button, EventHandlerFunc func) {
     button->onHoverEnd = func;
+}
+
+static void Button_styleHover(Button* button) {
+    if (!button->style) return;
+    button->style->colors->background = Color_copy(COLOR_TRANSPARENT);
+    button->style->colors->border = Color_copy(COLOR_WHITE);
+    button->style->colors->text = Color_copy(COLOR_WHITE);
+}
+
+static void Button_styleNormal(Button* button) {
+    if (button->style) {
+        ButtonStyle_destroy(button->style);
+    }
+    button->style = ButtonStyle_deepCopy(button->copy_style);
 }

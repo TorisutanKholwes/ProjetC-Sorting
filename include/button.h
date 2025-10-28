@@ -13,6 +13,9 @@ struct Button {
 
     ButtonStyle* style;
 
+    // When using hover, click who change style, keep a copy of the original style to restore it
+    ButtonStyle* copy_style;
+
     Input* input;
 
     bool hovered;
@@ -43,3 +46,4 @@ void Button_focus(Button* button);
 void Button_onClick(Button* button, EventHandlerFunc func);
 void Button_onHover(Button* button, EventHandlerFunc func);
 void Button_onHoverEnd(Button* button, EventHandlerFunc func);
+Size Button_getSize(Button* button);

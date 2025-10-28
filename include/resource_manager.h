@@ -13,7 +13,7 @@
 #define SOUND_PATH   ASSETS_PATH "sounds/"
 
 #define DEFAULT_FONT "Montserrat.ttf"
-#define DEFAULT_BOLD_FONT "Cinzel-Bold.ttf"
+#define DEFAULT_BOLD_FONT "Inter-Bold.ttf"
 
 struct ResourceManager {
     SDL_Renderer* renderer;

@@ -51,10 +51,11 @@ void ColumnGraph_destroy(ColumnGraph* graph) {
     safe_free((void**)&graph);
 }
 
-void ColumnGraph_initBars(ColumnGraph* graph, int bars_count) {
+void ColumnGraph_initBars(ColumnGraph* graph, const int bars_count, const int* values, ColumnGraphStyle style) {
     if (!graph) return;
     graph->bars_count = bars_count;
-
+    graph->graph_style = style;
+/*
     Color* rainbow[] = {
         COLOR_RED,
         COLOR_ORANGE,
@@ -64,7 +65,12 @@ void ColumnGraph_initBars(ColumnGraph* graph, int bars_count) {
         COLOR_INDIGO,
         COLOR_MAGENTA
     };
-    int numColors = sizeof(rainbow) / sizeof(rainbow[0]);
+    int numColors = sizeof(rainbow) / sizeof(rainbow[0]);*/
+
+    int numColors;
+    Color** colors = ColumnGraph_getColors(style, &numColors);
+
+    int max = arrayMax(values, bars_count);
 
     for (int i = 0; i < bars_count; i++) {
         float t = (bars_count <= 1) ? 0.0f : (float)i / (float)(bars_count - 1);
@@ -73,16 +79,29 @@ void ColumnGraph_initBars(ColumnGraph* graph, int bars_count) {
         if (idx < 0) idx = 0;
         Color* grad;
         if (idx >= numColors - 1) {
-            grad = Color_copy(rainbow[numColors - 1]);
+            grad = Color_copy(colors[numColors - 1]);
         } else {
             float mix = pos - (float)idx;
-            grad = interpolateColor(rainbow[idx], rainbow[idx + 1], mix);
+            grad = interpolateColor(colors[idx], colors[idx + 1], mix);
         }
 
-        ColumnGraphBar* graph_bar = ColumnGraphBar_new((float)(i + 1), grad, graph->size.height, bars_count);
+        ColumnGraphBar* graph_bar = ColumnGraphBar_new(values[i], grad, graph->size.height, max);
         List_push(graph->bars, graph_bar);
         FlexContainer_addElement(graph->container, graph_bar->element, 1.f, 1.f, -1.f);
     }
+}
+
+void ColumnGraph_initBarsIncrement(ColumnGraph* graph, int bars_count, ColumnGraphStyle style) {
+    int* values = calloc(bars_count, sizeof(int));
+    if (!values) {
+        error("Failed to allocate memory for ColumnGraphBarsIncrement");
+        return;
+    }
+    for (int i = 0; i < bars_count; i++) {
+        values[i] = i + 1;
+    }
+    ColumnGraph_initBars(graph, bars_count, values, style);
+    safe_free((void**)&values);
 }
 
 void ColumnGraph_shuffleBars(ColumnGraph* graph) {
@@ -99,7 +118,7 @@ void ColumnGraph_shuffleBars(ColumnGraph* graph) {
 
 void ColumnGraph_sortGraph(ColumnGraph* graph, ListSortType sort_type) {
     if (!graph) return;
-    List_sort(graph->bars, sort_type);
+    List_sort(graph->bars, sort_type, ColumnGraphBar_compare);
     FlexContainer_clear(graph->container);
     ListIterator* it = ListIterator_new(graph->bars);
     while (ListIterator_hasNext(it)) {
@@ -119,7 +138,7 @@ void ColumnGraph_removeHovering(ColumnGraph* graph) {
     }
 }
 
-ColumnGraphBar* ColumnGraphBar_new(float value, Color* color, float height, float max_value) {
+ColumnGraphBar* ColumnGraphBar_new(int value, Color* color, float height, float max_value) {
     ColumnGraphBar* bar = calloc(1, sizeof(ColumnGraphBar));
     if (!bar) {
         error("Failed to allocate memory for ColumnGraphBar");
@@ -159,7 +178,7 @@ static void ColumnGraph_handleMouseMotion(Input* input, SDL_Event* evt, ColumnGr
                 }
             }
             graph->hovered = true;
-            bar->element->data.box->background = COLOR_WHITE;
+            bar->element->data.box->background = Color_copy(ColumnGraph_getHoverColor(graph->graph_style));
             graph->hoveredBar = bar;
             if (graph->onHover) {
                 if (!graph->onHover(graph->parent, bar->value)) {
@@ -181,4 +200,95 @@ static void ColumnGraph_handleMouseMotion(Input* input, SDL_Event* evt, ColumnGr
         }
     }
     ListIterator_destroy(it);
+}
+
+int ColumnGraphBar_compare(const void* a, const void* b) {
+    return ((ColumnGraphBar*)a)->value - ((ColumnGraphBar*)b)->value;
+}
+
+Color** ColumnGraph_getColors(ColumnGraphStyle style, int* out_count) {
+    Color* colors[7];
+    switch (style) {
+        case GRAPH_RAINBOW: {
+            colors[0] = COLOR_RED;
+            colors[1] = COLOR_ORANGE;
+            colors[2] = COLOR_YELLOW;
+            colors[3] = COLOR_GREEN;
+            colors[4] = COLOR_BLUE;
+            colors[5] = COLOR_INDIGO;
+            colors[6] = COLOR_MAGENTA;
+            *out_count = 7;
+            break;
+        }
+        case GRAPH_WHITE: {
+            colors[0] = COLOR_WHITE;
+            *out_count = 1;
+            break;
+        }
+        case GRAPH_BLACK: {
+            colors[0] = COLOR_BLACK;
+            *out_count = 1;
+            break;
+        }
+        case GRAPH_GRAY: {
+            colors[0] = COLOR_GRAY(127);
+            *out_count = 1;
+            break;
+        }
+        case GRAPH_BLACK_AND_WHITE: {
+            colors[0] = COLOR_BLACK;
+            colors[1] = COLOR_WHITE;
+            *out_count = 2;
+            break;
+        }
+        default: {
+            colors[0] = COLOR_WHITE;
+            *out_count = 1;
+            break;
+        }
+    }
+    Color** result = calloc(*out_count, sizeof(Color*));
+    if (!result) {
+        error("Failed to allocate memory for ColumnGraph colors");
+        *out_count = 0;
+        return NULL;
+    }
+    for (int i = 0; i < *out_count; i++) {
+        result[i] = Color_copy(colors[i]);
+    }
+    return result;
+}
+
+char* ColumnGraph_getStyleName(ColumnGraphStyle style) {
+    switch (style) {
+        case GRAPH_RAINBOW:
+            return "Rainbow";
+        case GRAPH_WHITE:
+            return "White";
+        case GRAPH_BLACK:
+            return "Black";
+        case GRAPH_GRAY:
+            return "Gray";
+        case GRAPH_BLACK_AND_WHITE:
+            return "Black and White";
+        default:
+            return "Unknown";
+    }
+}
+
+Color* ColumnGraph_getHoverColor(ColumnGraphStyle style) {
+    switch (style) {
+        case GRAPH_RAINBOW:
+            return COLOR_WHITE;
+        case GRAPH_WHITE:
+            return COLOR_BLACK;
+        case GRAPH_BLACK:
+            return COLOR_WHITE;
+        case GRAPH_GRAY:
+            return COLOR_RED;;
+        case GRAPH_BLACK_AND_WHITE:
+            return COLOR_BLUE;
+        default:
+            return COLOR_WHITE;
+    }
 }

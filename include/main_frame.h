@@ -12,9 +12,12 @@ struct MainFrame {
     App* app;
 
     ColumnGraph** graph;
+    ColumnGraphStyle graph_style;
     Container* popup;
     int graph_count;
     int bar_count;
+    int selected_graph_index;
+    bool all_selected;
 
     bool showSettings;
     bool box_animating;
@@ -22,6 +25,8 @@ struct MainFrame {
     float box_anim_progress;
     float box_start_x;
     float box_target_x;
+
+    float settings_width;
 };
 
 MainFrame* MainFrame_new(App* app);

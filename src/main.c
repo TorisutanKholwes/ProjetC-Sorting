@@ -135,31 +135,23 @@ int main() {
 #endif
 
 #if 0
-void print_grid(int x) {
-    int n = (int)ceil(sqrt(x));
-    int rows = n;
-    int cols = (x + n - 1) / n; // répartit x éléments sur n lignes
-
-    int count = 0;
-    for (int i = 0; i < rows && count < x; i++) {
-        printf("[ ");
-        for (int j = 0; j < cols && count < x; j++) {
-            printf("[ ] ");
-            count++;
-        }
-        printf("]\n");
-    }
+int generateRandomNumber(int min, int max) {
+    return rand() % (max - min + 1) + min;
 }
 
 int main() {
-    print_grid(1);
-    printf("\n");
-    print_grid(2);
-    printf("\n");
-    print_grid(4);
-    printf("\n");
-    print_grid(7);
+    srand(time(NULL));
+    int len = generateRandomNumber(10, 200);
+    int* values = calloc(len, sizeof(int));
+    for (int i = 0; i < len; i++) {
+        values[i] = generateRandomNumber(1, 100);
+    }
+    printf("%d\n", len);
+    for (int i = 0; i < len; i++) {
+        printf("%d\n", values[i]);
+    }
+    safe_free((void**)&values);
 
+    return EXIT_SUCCESS;
 }
 #endif
-

@@ -99,6 +99,9 @@ void Input_update(Input *input) {
             List *handlers = Map_get(input->eventHandlers, (void *) evt.type);
             ListIterator *it = ListIterator_new(handlers);
             while (ListIterator_hasNext(it)) {
+                if (it->size != List_size(handlers)) {
+                    break;
+                }
                 const EventHandler *handler = ListIterator_next(it);
                 if (handler && handler->func) {
                     handler->func(input, &evt, handler->data);
@@ -115,6 +118,9 @@ void Input_update(Input *input) {
                     List *handlers = Map_get(input->keyEventHandlers, (void *) evt.key.key);
                     ListIterator *it = ListIterator_new(handlers);
                     while (ListIterator_hasNext(it)) {
+                        if (it->size != List_size(handlers)) {
+                            break;
+                        }
                         const EventHandler *handler = ListIterator_next(it);
                         if (handler && handler->func) {
                             handler->func(input, &evt, handler->data);

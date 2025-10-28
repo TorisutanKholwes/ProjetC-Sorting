@@ -32,6 +32,8 @@ static void MainFrame_onRuneP(Input* input, SDL_Event* evt, MainFrame* self);
 
 static void MainFrame_onRuneM(Input* input, SDL_Event* evt, MainFrame* self);
 
+static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self);
+
 static bool MainFrame_createPopup(MainFrame* self, float value);
 
 static bool MainFrame_removePopup(MainFrame* self, float value);
@@ -171,6 +173,7 @@ void MainFrame_focus(MainFrame* self) {
     Input_addKeyEventHandler(self->app->input, SDLK_S, (EventHandlerFunc) MainFrame_onRuneS, self);
     Input_addKeyEventHandler(self->app->input, SDLK_P, (EventHandlerFunc) MainFrame_onRuneP, self);
     Input_addKeyEventHandler(self->app->input, SDLK_M, (EventHandlerFunc) MainFrame_onRuneM, self);
+    Input_addKeyEventHandler(self->app->input, SDLK_Q, (EventHandlerFunc) MainFrame_onRuneQ, self);
 }
 
 void MainFrame_unfocus(MainFrame* self) {
@@ -180,6 +183,7 @@ void MainFrame_unfocus(MainFrame* self) {
     Input_removeOneKeyEventHandler(self->app->input, SDLK_S, self);
     Input_removeOneKeyEventHandler(self->app->input, SDLK_P, self);
     Input_removeOneKeyEventHandler(self->app->input, SDLK_M, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDLK_Q, self);
 }
 
 Frame* MainFrame_getFrame(MainFrame* self) {
@@ -204,12 +208,19 @@ static void MainFrame_onEscape(Input* input, SDL_Event* evt, MainFrame* self) {
     self->box_start_x = container->box->position->x;
     self->box_target_x = self->showSettings ? w - 200 : w;
     if (self->showSettings && self->popup) {
-        MainFrame_removePopup(self, 0);
+        for (int i = 0; i < self->graph_count; i++) {
+            ColumnGraph_removeHovering(self->graph[i]);
+        }
     }
 }
 
 static void MainFrame_onRuneS(Input* input, SDL_Event* evt, MainFrame* self) {
+    if (!self || self->showSettings) return;
+    bool hasPopup = self->popup != NULL;
     for (int i = 0; i < self->graph_count; i++) {
+        if (hasPopup) {
+            ColumnGraph_removeHovering(self->graph[i]);
+        }
         ColumnGraph_shuffleBars(self->graph[i]);
     }
     MainFrame_addElements(self, self->app);
@@ -290,4 +301,16 @@ static void MainFrame_quitApp(Input* input, SDL_Event* evt, Button* button) {
             mainFrame->app->running = false;
         }
     }
+}
+
+static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self) {
+    if (!self || self->showSettings) return;
+    bool hasPopup = self->popup != NULL;
+    for (int i = 0; i < self->graph_count; i++) {
+        if (hasPopup) {
+            ColumnGraph_removeHovering(self->graph[i]);
+        }
+        ColumnGraph_sortGraph(self->graph[i], LIST_SORT_TYPE_QUICK);
+    }
+    MainFrame_addElements(self, self->app);
 }

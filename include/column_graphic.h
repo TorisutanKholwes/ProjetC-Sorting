@@ -26,6 +26,8 @@ ColumnGraph* ColumnGraph_new(float width, float height, Position* position, Inpu
 void ColumnGraph_destroy(ColumnGraph* graph);
 void ColumnGraph_initBars(ColumnGraph* graph, int bars_count);
 void ColumnGraph_shuffleBars(ColumnGraph* graph);
+void ColumnGraph_sortGraph(ColumnGraph* graph, ListSortType sort_type);
+void ColumnGraph_removeHovering(ColumnGraph* graph);
 
 struct ColumnGraphBar {
     float value;

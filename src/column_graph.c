@@ -93,6 +93,28 @@ void ColumnGraph_shuffleBars(ColumnGraph* graph) {
     ListIterator_destroy(it);
 }
 
+void ColumnGraph_sortGraph(ColumnGraph* graph, ListSortType sort_type) {
+    if (!graph) return;
+    List_sort(graph->bars, sort_type);
+    FlexContainer_clear(graph->container);
+    ListIterator* it = ListIterator_new(graph->bars);
+    while (ListIterator_hasNext(it)) {
+        ColumnGraphBar* bar = (ColumnGraphBar*)ListIterator_next(it);
+        FlexContainer_addElement(graph->container, bar->element, 1.f, 1.f, -1.f);
+    }
+    ListIterator_destroy(it);
+}
+
+void ColumnGraph_removeHovering(ColumnGraph* graph) {
+    if (!graph || !graph->hoveredBar) return;
+    graph->hoveredBar->element->data.box->background = Color_copy(graph->hoveredBar->color);
+    graph->hovered = false;
+    graph->hoveredBar = NULL;
+    if (graph->offHover) {
+        graph->offHover(graph->parent, 0);
+    }
+}
+
 ColumnGraphBar* ColumnGraphBar_new(float value, Color* color, float height, float max_value) {
     ColumnGraphBar* bar = calloc(1, sizeof(ColumnGraphBar));
     if (!bar) {
@@ -109,7 +131,6 @@ ColumnGraphBar* ColumnGraphBar_new(float value, Color* color, float height, floa
 void ColumnGraphBar_destroy(ColumnGraphBar* bar) {
     if (!bar) return;
     Color_destroy(bar->color);
-    //Element_destroy(bar->element);
     safe_free((void**)&bar);
 }
 

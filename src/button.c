@@ -71,6 +71,10 @@ Button* Button_newf(const App* app, Position* position, ButtonStyle* style, void
 
 void Button_destroy(Button* button) {
     if (!button) return;
+    Input_removeOneEventHandler(button->input, SDL_EVENT_MOUSE_MOTION, button);
+    Input_removeOneEventHandler(button->input, SDL_EVENT_MOUSE_BUTTON_DOWN, button);
+    Input_removeOneEventHandler(button->input, SDL_EVENT_MOUSE_BUTTON_UP, button);
+
     Text_destroy(button->text);
     ButtonStyle_destroy(button->style);
     safe_free((void**)&button);

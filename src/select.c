@@ -154,7 +154,7 @@ void Select_onChange(Select* select, EventHandlerFunc func) {
 
 void Select_setSelectedIndex(Select* select, int index) {
     if (!select) return;
-    if (index < 0 || index >= List_size(select->options)) {
+    if (index < 0 || (size_t) index >= List_size(select->options)) {
         log_message(LOG_LEVEL_WARN, "Select_setSelectedIndex: index %d out of bounds", index);
         return;
     }

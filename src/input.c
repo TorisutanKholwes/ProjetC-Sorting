@@ -93,8 +93,8 @@ void Input_update(Input *input) {
     SDL_Event evt;
     SDL_Scancode code;
     while (SDL_PollEvent(&evt)) {
-        if (input->eventHandlers && Map_containsKey(input->eventHandlers, (void *) evt.type)) {
-            List *handlers = Map_get(input->eventHandlers, (void *) evt.type);
+        if (input->eventHandlers && Map_containsKey(input->eventHandlers, (void *) (unsigned long) evt.type)) {
+            List *handlers = Map_get(input->eventHandlers, (void *) (unsigned long) evt.type);
             ListIterator *it = ListIterator_new(handlers);
             while (ListIterator_hasNext(it)) {
                 if (it->size != List_size(handlers)) {
@@ -112,8 +112,8 @@ void Input_update(Input *input) {
                 input->quit = true;
                 break;
             case SDL_EVENT_KEY_DOWN:
-                if (input->keyEventHandlers && Map_containsKey(input->keyEventHandlers, (void *) evt.key.key)) {
-                    List *handlers = Map_get(input->keyEventHandlers, (void *) evt.key.key);
+                if (input->keyEventHandlers && Map_containsKey(input->keyEventHandlers, (void *) (unsigned long) evt.key.key)) {
+                    List *handlers = Map_get(input->keyEventHandlers, (void *) (unsigned long) evt.key.key);
                     ListIterator *it = ListIterator_new(handlers);
                     while (ListIterator_hasNext(it)) {
                         if (it->size != List_size(handlers)) {
@@ -258,30 +258,30 @@ void Input_addEventHandler(Input *input, Uint32 eventType, EventHandlerFunc func
     }
     handler->func = func;
     handler->data = data;
-    if (!Map_containsKey(input->eventHandlers, (void *) eventType)) {
+    if (!Map_containsKey(input->eventHandlers, (void *) (unsigned long) eventType)) {
         List *handlers = List_create();
         List_push(handlers, (void *) handler);
-        Map_put(input->eventHandlers, (void *) eventType, handlers);
+        Map_put(input->eventHandlers, (void *) (unsigned long) eventType, handlers);
     } else {
-        List *handlers = Map_get(input->eventHandlers, (void *) eventType);
+        List *handlers = Map_get(input->eventHandlers, (void *) (unsigned long) eventType);
         List_push(handlers, (void *) handler);
     }
 }
 
 void Input_removeEventHandler(Input *input, Uint32 eventType) {
     if (!input) return;
-    List_destroyWitValues(Map_get(input->eventHandlers, (void*)eventType), Input_destroyEventHandler);
-    Map_remove(input->eventHandlers, (void *) eventType);
+    List_destroyWitValues(Map_get(input->eventHandlers, (void*) (unsigned long) eventType), Input_destroyEventHandler);
+    Map_remove(input->eventHandlers, (void *) (unsigned long) eventType);
 }
 
 void Input_removeOneEventHandler(Input *input, Uint32 eventType, void *data) {
     if (!input || !data) return;
 
-    if (!Map_containsKey(input->eventHandlers, (void *) eventType)) {
+    if (!Map_containsKey(input->eventHandlers, (void *) (unsigned long) eventType)) {
         return;
     }
 
-    List *handlers = Map_get(input->eventHandlers, (void *) eventType);
+    List *handlers = Map_get(input->eventHandlers, (void *) (unsigned long) eventType);
     ListIterator *it = ListIterator_new(handlers);
     while (ListIterator_hasNext(it)) {
         EventHandler *handler = ListIterator_next(it);
@@ -293,7 +293,7 @@ void Input_removeOneEventHandler(Input *input, Uint32 eventType, void *data) {
     }
     ListIterator_destroy(it);
     if (List_size(handlers) == 0) {
-        Map_remove(input->eventHandlers, (void *) eventType);
+        Map_remove(input->eventHandlers, (void *) (unsigned long) eventType);
         List_destroy(handlers);
     }
 }

@@ -63,3 +63,4 @@ void FlexContainer_setGap(FlexContainer* container, float gap);
 void FlexContainer_addElement(FlexContainer* container, Element* element, float flex_grow, float flex_shrink, float flex_basis);
 void FlexContainer_layout(FlexContainer* container);
 void FlexContainer_clear(FlexContainer* container);
+void FlexContainer_setSize(FlexContainer* container, float width, float height);

@@ -48,5 +48,13 @@ char* String_min(const char** arr, int len);
 int String_compare(const char* a, const char* b);
 
 int modulo(int a, int b);
-int arrayMax(const long* arr, int len);
-int arrayMin(const long* arr, int len);
+long arrayMax(const long* arr, int len);
+long arrayMin(const long* arr, int len);
+
+#define UNUSED(x) (void)(x)
+
+int* voidToIntArray(void** arr, int len);
+long* voidToLongArray(void** arr, int len);
+
+void** longToVoidArray(const long* arr, int len);
+void** intToVoidArray(const int* arr, int len);

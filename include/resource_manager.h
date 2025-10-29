@@ -29,10 +29,5 @@ SDL_Texture* ResourceManager_getTexture(ResourceManager* self, const char* filen
 TTF_Font* ResourceManager_getFont(ResourceManager* self, const char* filename, int size);
 MIX_Audio* ResourceManager_getSound(ResourceManager* self, const char* filename);
 
-INLINE TTF_Font* ResourceManager_getDefaultFont(ResourceManager* self, int size) {
-    return ResourceManager_getFont(self, DEFAULT_FONT, size);
-}
-
-INLINE TTF_Font* ResourceManager_getDefaultBoldFont(ResourceManager* self, int size) {
-    return ResourceManager_getFont(self, DEFAULT_BOLD_FONT, size);
-}
+TTF_Font* ResourceManager_getDefaultFont(ResourceManager* self, int size);
+TTF_Font* ResourceManager_getDefaultBoldFont(ResourceManager* self, int size);

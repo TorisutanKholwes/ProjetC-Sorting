@@ -246,7 +246,7 @@ int modulo(const int a, const int b) {
     return ((a % b) + b) % b;
 }
 
-int arrayMax(const long* arr, const int len) {
+long arrayMax(const long* arr, const int len) {
     long maximum = arr[0];
     for (int i = 1; i < len; i++) {
         if (arr[i] > maximum) {
@@ -256,7 +256,7 @@ int arrayMax(const long* arr, const int len) {
     return maximum;
 }
 
-int arrayMin(const long* arr, const int len) {
+long arrayMin(const long* arr, const int len) {
     long minimum = arr[0];
     for (int i = 1; i < len; i++) {
         if (arr[i] < minimum) {
@@ -307,4 +307,56 @@ int String_compare(const char* a, const char* b) {
         return strcmp(a, b);
     }
     return strlen(a) - strlen(b);
+}
+
+int* voidToIntArray(void** arr, int len) {
+    if (!arr || len <= 0) return NULL;
+    int* intArr = calloc(len, sizeof(int));
+    if (!intArr) {
+        error("Failed to allocate memory for int array conversion");
+        return NULL;
+    }
+    for (int i = 0; i < len; i++) {
+        intArr[i] = (int)(long)arr[i];
+    }
+    return intArr;
+}
+
+long* voidToLongArray(void** arr, int len) {
+    if (!arr || len <= 0) return NULL;
+    long* longArr = calloc(len, sizeof(long));
+    if (!longArr) {
+        error("Failed to allocate memory for long array conversion");
+        return NULL;
+    }
+    for (int i = 0; i < len; i++) {
+        longArr[i] = (long)arr[i];
+    }
+    return longArr;
+}
+
+void** longToVoidArray(const long* arr, int len) {
+    if (!arr || len <= 0) return NULL;
+    void** voidArr = calloc(len, sizeof(void*));
+    if (!voidArr) {
+        error("Failed to allocate memory for void array conversion");
+        return NULL;
+    }
+    for (int i = 0; i < len; i++) {
+        voidArr[i] = (void*)arr[i];
+    }
+    return voidArr;
+}
+
+void** intToVoidArray(const int* arr, int len) {
+    if (!arr || len <= 0) return NULL;
+    void** voidArr = calloc(len, sizeof(void*));
+    if (!voidArr) {
+        error("Failed to allocate memory for void array conversion");
+        return NULL;
+    }
+    for (int i = 0; i < len; i++) {
+        voidArr[i] = (void*)(long)arr[i];
+    }
+    return voidArr;
 }

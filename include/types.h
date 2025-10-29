@@ -84,6 +84,11 @@ typedef enum ColumnGraphStyle {
     GRAPH_STYLE_COUNT
 } ColumnGraphStyle;
 
+typedef enum ColumnGraphType {
+    GRAPH_TYPE_INT,
+    GRAPH_TYPE_STRING
+} ColumnGraphType;
+
 // Types of func
 typedef void (*EventHandlerFunc)(Input* input, SDL_Event* event, void* data);
 
@@ -93,6 +98,6 @@ typedef void (*FrameRenderFunc)(SDL_Renderer* renderer, void* data);
 
 typedef void (*DestroyFunc)(void* data);
 
-typedef bool (*ColumnsHoverFunc)(void* data, float value);
+typedef bool (*ColumnsHoverFunc)(void* data, void* value, ColumnGraphType type);
 
 typedef int (*CompareFunc)(const void* a, const void* b);

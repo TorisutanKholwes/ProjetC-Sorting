@@ -13,7 +13,6 @@ struct ListNode {
     void* value;
 };
 
-
 struct List {
     ListNode* head;
     size_t size;

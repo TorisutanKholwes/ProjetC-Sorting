@@ -21,7 +21,7 @@
 
 static void HelpFrame_addElements(HelpFrame* self, App* app);
 
-static void HelpFrame_add_text_and_image(HelpFrame* self, App* app);
+static void HelpFrame_add_text_and_image(HelpFrame* self, App* app, char* key, int index, char* description);
 
 HelpFrame* HelpFrame_new(App *app) {
     HelpFrame *self = calloc(1, sizeof(HelpFrame));
@@ -60,41 +60,17 @@ static void HelpFrame_addElements(HelpFrame *self, App *app) {
 
     int w, h;
     SDL_GetWindowSize(self->app->window, &w, &h);
-    Text *title_text = Text_new(app->renderer, text_title_style, Position_new(w / 2, 0), true, "Help");
+    Text *title_text = Text_new(app->renderer, text_title_style, Position_new(w / 2, 0), true, "Help (Escape to go back)");
     Size size_title_text = Text_getSize(title_text);
     Text_setPosition(title_text, size_title_text.width, size_title_text.height / 2);
     List_push(self->elements, Element_fromText(title_text, NULL));
 
-    Position *position_A = Position_new(0, (h / 8) * 2);
-    Image *image_A = Image_load(self->app, "letter_A.svg", position_A, false);
-    Image_setRatio(image_A, 0.05);
-    List_push(self->elements, Element_fromImage(image_A, NULL));
-    Size size_image_A = Image_getSize(image_A);
-    TextStyle *text_A_style = TextStyle_new(
-        ResourceManager_getDefaultBoldFont(app->manager, 20),
-        20, COLOR_WHITE, TTF_STYLE_NORMAL);
-    Text *text_A = Text_new(app->renderer,
-                            text_A_style,
-                            Position_new(position_A->x + 10 + size_image_A.width, position_A->y+5),
-                            false,
-                            "explication de A");
-    List_push(self->elements, Element_fromText(text_A, NULL));
-
-
-    Position *position_Q = Position_new(0, (h / 8) * 3);
-    Image *image_Q = Image_load(self->app, "letter_A.svg", position_Q, false);
-    Image_setRatio(image_Q, 0.05);
-    List_push(self->elements, Element_fromImage(image_Q, NULL));
-    Size size_image_Q = Image_getSize(image_Q);
-    TextStyle *text_Q_style = TextStyle_new(
-        ResourceManager_getDefaultBoldFont(app->manager, 20),
-        20, COLOR_WHITE, TTF_STYLE_NORMAL);
-    Text *text_Q = Text_new(app->renderer,
-                            text_Q_style,
-                            Position_new(position_Q->x + 10 + size_image_A.width, position_Q->y+5),
-                            false,
-                            "explication de Q");
-    List_push(self->elements, Element_fromText(text_Q, NULL));
+    HelpFrame_add_text_and_image(self, app, "A",   1, "Select/Unselect all elements of the graph");
+    HelpFrame_add_text_and_image(self, app, "M",   2, "Delete a graph");
+    HelpFrame_add_text_and_image(self, app, "P",   3, "Add a graph");
+    HelpFrame_add_text_and_image(self, app, "Q",   4, "Sort all elements of the graph");
+    HelpFrame_add_text_and_image(self, app, "S",   5, "shuffle all elements of the graph ");
+    HelpFrame_add_text_and_image(self, app, "esc", 6, "Show/Hide Setting");
 }
 
 void HelpFrame_destroy(HelpFrame *self) {
@@ -134,6 +110,26 @@ Frame *HelpFrame_getFrame(HelpFrame *self) {
                              (DestroyFunc) HelpFrame_destroy);
     Frame_setTitle(frame, "HelpFrame");
     return frame;
+}
+
+static void HelpFrame_add_text_and_image(HelpFrame* self, App* app, char* key, int index, char* description) {
+    int w, h;
+    SDL_GetWindowSize(self->app->window, &w, &h);
+    Position* position = Position_new(0, (h / 7) * index);
+    char* path = String_format("letter_%s.svg", key);
+    Image* image = Image_load(self->app, path, position, false);
+    Image_setRatio(image, 0.05);
+    List_push(self->elements, Element_fromImage(image, NULL));
+    Size size_image_A = Image_getSize(image);
+    TextStyle *text_A_style = TextStyle_new(
+        ResourceManager_getDefaultBoldFont(app->manager, 20),
+        20, COLOR_WHITE, TTF_STYLE_NORMAL);
+    Text* text_A = Text_newf(app->renderer,
+                            text_A_style,
+                            Position_new(position->x + 10 + size_image_A.width, position->y+5),
+                            false,
+                            description, key);
+    List_push(self->elements, Element_fromText(text_A, NULL));
 }
 
 

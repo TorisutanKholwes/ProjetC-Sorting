@@ -89,11 +89,6 @@ void Image_render(Image* self, SDL_Renderer* renderer) {
     if (!SDL_RenderTexture(renderer, self->texture, NULL, &dst)) {
         error("Failed to render image texture : %s", SDL_GetError());
     }
-    /*SDL_Texture* scaled = Image_CreateScaledTexture(self->texture, renderer, width, height);
-    SDL_FRect dst = { x, y, width, height };
-    if (!SDL_RenderTexture(renderer, scaled, NULL, &dst)) {
-        error("Failed to render image texture : %s", SDL_GetError());
-    }*/
 }
 
 void Image_setSize(Image* self, float width, float height) {
@@ -124,6 +119,25 @@ void Image_setPosition(Image* self, float x, float y) {
 void Image_setRatio(Image* self, float ratio) {
     if (!self) return;
     self->ratio = ratio;
+}
+
+void Image_setTexture(Image* self, SDL_Texture* texture) {
+    self->texture = texture;
+    float w, h;
+    SDL_GetTextureSize(texture, &w, &h);
+    SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_LINEAR);
+    self->size.width = w;
+    self->size.height = h;
+}
+
+void Image_changePath(Image* self, App* app, const char* path) {
+    ResourceManager* manager = app->manager;
+    SDL_Texture* texture = ResourceManager_getTexture(manager, path);
+    if (!texture) {
+        error("Failed to load texture from path: %s", path);
+        return;
+    }
+    Image_setTexture(self, texture);
 }
 
 static SDL_Texture* Image_CreateScaledTexture(SDL_Texture* texture, SDL_Renderer* renderer, float new_width, float new_height) {

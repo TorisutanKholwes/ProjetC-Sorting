@@ -53,6 +53,10 @@ static void MainFrame_onRuneA(Input* input, SDL_Event* evt, MainFrame* self);
 
 static void MainFrame_onGraphThemeChange(Input* input, SDL_Event* evt, Select* select);
 
+static void MainFrame_onMouseMove(Input* input, SDL_Event* evt, MainFrame* self);
+
+static void MainFrame_updateHelpImage(MainFrame* self);
+
 MainFrame* MainFrame_new(App* app) {
     MainFrame* self = calloc(1, sizeof(MainFrame));
     if (!self) {
@@ -243,6 +247,7 @@ void MainFrame_destroy(MainFrame* self) {
     Input_removeOneKeyEventHandler(self->app->input, SDLK_A, self);
 
     Input_removeOneEventHandler(self->app->input, SDL_EVENT_MOUSE_BUTTON_DOWN, self);
+    Input_removeOneEventHandler(self->app->input, SDL_EVENT_MOUSE_MOTION, self);
 
     Element_destroyList(self->elements);
 
@@ -295,6 +300,7 @@ void MainFrame_focus(MainFrame* self) {
     Input_addKeyEventHandler(self->app->input, SDLK_A, (EventHandlerFunc) MainFrame_onRuneA, self);
 
     Input_addEventHandler(self->app->input, SDL_EVENT_MOUSE_BUTTON_DOWN, (EventHandlerFunc) MainFrame_onClick, self);
+    Input_addEventHandler(self->app->input, SDL_EVENT_MOUSE_MOTION, (EventHandlerFunc) MainFrame_onMouseMove, self);
 }
 
 void MainFrame_unfocus(MainFrame* self) {
@@ -309,6 +315,7 @@ void MainFrame_unfocus(MainFrame* self) {
     Input_removeOneKeyEventHandler(self->app->input, SDLK_A, self);
 
     Input_removeOneEventHandler(self->app->input, SDL_EVENT_MOUSE_BUTTON_DOWN, self);
+    Input_removeOneEventHandler(self->app->input, SDL_EVENT_MOUSE_MOTION, self);
 }
 
 Frame* MainFrame_getFrame(MainFrame* self) {
@@ -327,6 +334,8 @@ static void MainFrame_onEscape(Input* input, SDL_Event* evt, MainFrame* self) {
     SDL_GetWindowSize(self->app->window, &w, &h);
     self->box_animating = true;
     self->showSettings = !self->showSettings;
+    self->hovered_help = false;
+    MainFrame_updateHelpImage(self);
     self->box_anim_progress = 0.f;
     Element* settings = Element_getById(self->elements, "settings");
     Container* container = settings->data.container;
@@ -632,6 +641,8 @@ static void MainFrame_onClick(Input* input, SDL_Event* evt, MainFrame* self) {
     Position* position_help_image = image_help->position;
     SDL_FRect help_rect = {position_help_image->x,position_help_image->y, size_help_image.width, size_help_image.height};
     if (Input_mouseInRect(self->app->input, help_rect)) {
+        self->hovered_help = false;
+        MainFrame_updateHelpImage(self);
         App_addFrame(self->app, HelpFrame_getFrame(HelpFrame_new(self->app)));
     }
 }
@@ -660,4 +671,27 @@ static void MainFrame_onGraphThemeChange(Input* input, SDL_Event* evt, Select* s
         safe_free((void **) &values);
     }
     MainFrame_addElements(self, self->app);
+}
+
+static void MainFrame_onMouseMove(Input* input, SDL_Event* evt, MainFrame* self) {
+    if (!self || self->showSettings) return;
+    Image* img = Element_getById(self->elements, "help_image")->data.image;
+    Size imgSize = Image_getSize(img);
+    SDL_FRect rect = { img->position->x, img->position->y, imgSize.width, imgSize.height };
+    if (Input_mouseInRect(self->app->input, rect)) {
+        self->hovered_help = true;
+        Image_changePath(img, self->app, "help_hover.svg");
+    } else if (self->hovered_help) {
+        self->hovered_help = false;
+        Image_changePath(img, self->app, "help_white.svg");
+    }
+}
+
+static void MainFrame_updateHelpImage(MainFrame* self) {
+    Image* img = Element_getById(self->elements, "help_image")->data.image;
+    if (self->hovered_help) {
+        Image_changePath(img, self->app, "help_hover.svg");
+    } else {
+        Image_changePath(img, self->app, "help_white.svg");
+    }
 }

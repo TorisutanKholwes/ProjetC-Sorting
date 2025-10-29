@@ -27,6 +27,8 @@ struct MainFrame {
     float box_target_x;
 
     float settings_width;
+
+    bool hovered_help;
 };
 
 MainFrame* MainFrame_new(App* app);

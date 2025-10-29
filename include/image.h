@@ -21,6 +21,8 @@ Image* Image_load(App* app, const char* path, Position* position, bool from_cent
 void Image_destroy(Image* self);
 void Image_render(Image* self, SDL_Renderer* renderer);
 
+void Image_setTexture(Image* self, SDL_Texture* texture);
+void Image_changePath(Image* self, App* app, const char* path);
 void Image_setSize(Image* self, float width, float height);
 Size Image_getSize(Image* self);
 void Image_setPosition(Image* self, float x, float y);

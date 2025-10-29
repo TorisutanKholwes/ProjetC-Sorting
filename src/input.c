@@ -36,9 +36,7 @@ Input *Input_create() {
         safe_free((void **) &input);
         return NULL;
     }
-    float x, y;
-    SDL_GetMouseState(&x, &y);
-    input->mousePos = Position_new(x, y);
+    input->mousePos = Position_new(-1, -1);
     input->lastPressed = SDL_SCANCODE_UNKNOWN;
     return input;
 }

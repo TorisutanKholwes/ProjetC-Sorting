@@ -17,6 +17,8 @@ struct ColumnGraph {
     Input* input;
     bool hovered;
 
+    ColumnGraphType type;
+
     ColumnGraphStyle graph_style;
 
     ColumnGraphBar* hoveredBar;
@@ -24,25 +26,27 @@ struct ColumnGraph {
     ColumnsHoverFunc offHover;
 };
 
-ColumnGraph* ColumnGraph_new(float width, float height, Position* position, Input* input, void* parent, ColumnsHoverFunc onHover, ColumnsHoverFunc offHover);
+ColumnGraph* ColumnGraph_new(float width, float height, Position* position, Input* input, void* parent, ColumnGraphType type, ColumnsHoverFunc onHover, ColumnsHoverFunc offHover);
 void ColumnGraph_destroy(ColumnGraph* graph);
-void ColumnGraph_initBars(ColumnGraph* graph, int bars_count, const int* values, ColumnGraphStyle style);
+void ColumnGraph_initBars(ColumnGraph* graph, int bars_count, void** values, ColumnGraphStyle style);
 void ColumnGraph_initBarsIncrement(ColumnGraph* graph, int bars_count, ColumnGraphStyle style);
+void ColumnGraph_setGraphType(ColumnGraph* graph, ColumnGraphType type);
 void ColumnGraph_shuffleBars(ColumnGraph* graph);
 void ColumnGraph_sortGraph(ColumnGraph* graph, ListSortType sort_type);
 void ColumnGraph_removeHovering(ColumnGraph* graph);
-int* ColumnGraph_getValues(ColumnGraph* graph, int* out_len);
+void** ColumnGraph_getValues(ColumnGraph* graph, int* out_len);
 void ColumnGraph_resetBars(ColumnGraph* graph);
 
 struct ColumnGraphBar {
-    int value;
+    void* value;
     Element* element;
     Color* color;
+    ColumnGraph* parent;
 };
 
-ColumnGraphBar* ColumnGraphBar_new(int value, Color* color, float height, float max_value);
+ColumnGraphBar* ColumnGraphBar_new(void* value, Color* color, float height, void* max_value, ColumnGraph* parent);
 void ColumnGraphBar_destroy(ColumnGraphBar* bar);
-void ColumnGraphBar_setValue(ColumnGraphBar* bar, float value);
+void ColumnGraphBar_setValue(ColumnGraphBar* bar, void* value);
 int ColumnGraphBar_compare(const void* a, const void* b);
 
 Color** ColumnGraph_getColors(ColumnGraphStyle style, int* out_count);

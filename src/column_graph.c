@@ -14,7 +14,7 @@
 
 static void ColumnGraph_handleMouseMotion(Input* input, SDL_Event* evt, ColumnGraph* graph);
 
-ColumnGraph* ColumnGraph_new(float width, float height, Position* position, Input* input, void* parent, ColumnsHoverFunc onHover, ColumnsHoverFunc offHover) {
+ColumnGraph* ColumnGraph_new(float width, float height, Position* position, Input* input, void* parent, ColumnGraphType type, ColumnsHoverFunc onHover, ColumnsHoverFunc offHover) {
     ColumnGraph* graph = calloc(1, sizeof(ColumnGraph));
     if (!graph) {
         error("Failed to allocate memory for ColumnGraph");
@@ -24,6 +24,7 @@ ColumnGraph* ColumnGraph_new(float width, float height, Position* position, Inpu
     graph->size.height = height;
     graph->position = position;
     graph->input = input;
+    graph->type = type;
     graph->bars_count = 0;
     graph->parent = parent;
     graph->bars = List_create();
@@ -51,26 +52,27 @@ void ColumnGraph_destroy(ColumnGraph* graph) {
     safe_free((void**)&graph);
 }
 
-void ColumnGraph_initBars(ColumnGraph* graph, const int bars_count, const int* values, ColumnGraphStyle style) {
+void ColumnGraph_initBars(ColumnGraph* graph, const int bars_count, void** values, ColumnGraphStyle style) {
     if (!graph) return;
     graph->bars_count = bars_count;
     graph->graph_style = style;
-/*
-    Color* rainbow[] = {
-        COLOR_RED,
-        COLOR_ORANGE,
-        COLOR_YELLOW,
-        COLOR_GREEN,
-        COLOR_BLUE,
-        COLOR_INDIGO,
-        COLOR_MAGENTA
-    };
-    int numColors = sizeof(rainbow) / sizeof(rainbow[0]);*/
 
     int numColors;
     Color** colors = ColumnGraph_getColors(style, &numColors);
 
-    int max = arrayMax(values, bars_count);
+    void* max;
+    switch (graph->type) {
+        case GRAPH_TYPE_INT:
+            max = (void*) arrayMax((void**)values, bars_count);
+            break;
+        case GRAPH_TYPE_STRING:
+            max = (void*) String_max((const char**)values, bars_count);
+            break;
+        default:
+            max = NULL;
+            break;
+    }
+    if (max == NULL) return;
 
     for (int i = 0; i < bars_count; i++) {
         float t = (bars_count <= 1) ? 0.0f : (float)i / (float)(bars_count - 1);
@@ -85,14 +87,15 @@ void ColumnGraph_initBars(ColumnGraph* graph, const int bars_count, const int* v
             grad = interpolateColor(colors[idx], colors[idx + 1], mix);
         }
 
-        ColumnGraphBar* graph_bar = ColumnGraphBar_new(values[i], grad, graph->size.height, max);
+        ColumnGraphBar* graph_bar = ColumnGraphBar_new(values[i], grad, graph->size.height, (void*)max, graph);
         List_push(graph->bars, graph_bar);
         FlexContainer_addElement(graph->container, graph_bar->element, 1.f, 1.f, -1.f);
     }
 }
 
 void ColumnGraph_initBarsIncrement(ColumnGraph* graph, int bars_count, ColumnGraphStyle style) {
-    int* values = calloc(bars_count, sizeof(int));
+    if (!graph || graph->type != GRAPH_TYPE_INT) return;
+    long* values = calloc(bars_count, sizeof(long));
     if (!values) {
         error("Failed to allocate memory for ColumnGraphBarsIncrement");
         return;
@@ -102,6 +105,12 @@ void ColumnGraph_initBarsIncrement(ColumnGraph* graph, int bars_count, ColumnGra
     }
     ColumnGraph_initBars(graph, bars_count, values, style);
     safe_free((void**)&values);
+}
+
+
+void ColumnGraph_setGraphType(ColumnGraph* graph, ColumnGraphType type) {
+    if (!graph) return;
+    graph->type = type;
 }
 
 void ColumnGraph_shuffleBars(ColumnGraph* graph) {
@@ -134,17 +143,17 @@ void ColumnGraph_removeHovering(ColumnGraph* graph) {
     graph->hovered = false;
     graph->hoveredBar = NULL;
     if (graph->offHover) {
-        graph->offHover(graph->parent, 0);
+        graph->offHover(graph->parent, 0, graph->type);
     }
 }
 
-int* ColumnGraph_getValues(ColumnGraph* graph, int* out_len) {
+void** ColumnGraph_getValues(ColumnGraph* graph, int* out_len) {
     if (!graph) {
         *out_len = 0;
         return NULL;
     }
     int count = List_size(graph->bars);
-    int* values = calloc(count, sizeof(int));
+    void** values = calloc(count, sizeof(void*));
     if (!values) {
         error("Failed to allocate memory for ColumnGraph values");
         *out_len = 0;
@@ -172,15 +181,30 @@ void ColumnGraph_resetBars(ColumnGraph* graph) {
     List_clear(graph->bars);
 }
 
-ColumnGraphBar* ColumnGraphBar_new(int value, Color* color, float height, float max_value) {
+static float ColumnGraphBar_calculateBarHeight(void* value, float height, void* max_value, ColumnGraphType type) {
+    switch (type) {
+        case GRAPH_TYPE_INT:
+            return ((int)value) * height / ((int)max_value);
+        case GRAPH_TYPE_STRING:
+            int len = strlen(value);
+            int max_len = strlen(max_value);
+            return len * height / max_len;
+        default:
+            return 0.f;
+    }
+}
+
+ColumnGraphBar* ColumnGraphBar_new(void* value, Color* color, float height, void* max_value, ColumnGraph* parent) {
     ColumnGraphBar* bar = calloc(1, sizeof(ColumnGraphBar));
     if (!bar) {
         error("Failed to allocate memory for ColumnGraphBar");
         return NULL;
     }
+    bar->parent = parent;
     bar->color = Color_copy(color);
     bar->value = value;
-    Box* box = Box_new(0, value * height / max_value, 0, Position_new(0, height - (value * height / max_value)), Color_copy(color), NULL, false);
+    float barHeight = ColumnGraphBar_calculateBarHeight(value, height, max_value, parent->type);
+    Box* box = Box_new(0, barHeight, 0, Position_new(0, height - barHeight), Color_copy(color), NULL, false);
     bar->element = Element_fromBox(box, NULL);
     return bar;
 }
@@ -191,7 +215,7 @@ void ColumnGraphBar_destroy(ColumnGraphBar* bar) {
     safe_free((void**)&bar);
 }
 
-void ColumnGraphBar_setValue(ColumnGraphBar* bar, float value) {
+void ColumnGraphBar_setValue(ColumnGraphBar* bar, void* value) {
     if (!bar) return;
     bar->value = value;
 }
@@ -208,14 +232,14 @@ static void ColumnGraph_handleMouseMotion(Input* input, SDL_Event* evt, ColumnGr
                 graph->hoveredBar->element->data.box->background = Color_copy(graph->hoveredBar->color);
                 graph->hoveredBar = NULL;
                 if (graph->offHover) {
-                    graph->offHover(graph->parent, 0);
+                    graph->offHover(graph->parent, 0, graph->type);
                 }
             }
             graph->hovered = true;
             bar->element->data.box->background = Color_copy(ColumnGraph_getHoverColor(graph->graph_style));
             graph->hoveredBar = bar;
             if (graph->onHover) {
-                if (!graph->onHover(graph->parent, bar->value)) {
+                if (!graph->onHover(graph->parent, bar->value, graph->type)) {
                     bar->element->data.box->background = Color_copy(bar->color);
                     graph->hovered = false;
                     graph->hoveredBar = NULL;
@@ -230,14 +254,26 @@ static void ColumnGraph_handleMouseMotion(Input* input, SDL_Event* evt, ColumnGr
         graph->hoveredBar->element->data.box->background = Color_copy(graph->hoveredBar->color);
         graph->hoveredBar = NULL;
         if (graph->offHover) {
-            graph->offHover(graph->parent, 0);
+            graph->offHover(graph->parent, 0, graph->type);
         }
     }
     ListIterator_destroy(it);
 }
 
 int ColumnGraphBar_compare(const void* a, const void* b) {
-    return ((ColumnGraphBar*)a)->value - ((ColumnGraphBar*)b)->value;
+    ColumnGraphBar* bar = a;
+    ColumnGraphBar* other = b;
+    if (bar->parent->type != other->parent->type) {
+        return 0;
+    }
+    switch (bar->parent->type) {
+        case GRAPH_TYPE_INT:
+            return ((int)bar->value) - ((int)other->value);
+        case GRAPH_TYPE_STRING:
+            return String_compare((const char*)bar->value, (const char*)other->value);
+        default:
+            return 0;
+    }
 }
 
 Color** ColumnGraph_getColors(ColumnGraphStyle style, int* out_count) {

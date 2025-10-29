@@ -78,7 +78,12 @@ add_executable(SDLBase ${SRC_FILES} )
 target_include_directories(SDLBase PRIVATE include)
 target_include_directories(SDLBase PRIVATE ${SDL3_INCLUDE_DIRS} ${SDL3_IMAGE_INCLUDE_DIRS} ${SDL3_MIXER_INCLUDE_DIRS} ${SDL3_TTF_INCLUDE_DIRS})
 
-target_link_libraries(SDLBase PRIVATE SDL3::SDL3 SDL3_image::SDL3_image SDL3_mixer::SDL3_mixer SDL3_ttf::SDL3_ttf m)
+if (WIN32)
+    target_link_libraries(SDLBase PRIVATE SDL3::SDL3 SDL3_image::SDL3_image SDL3_mixer::SDL3_mixer SDL3_ttf::SDL3_ttf)
+else ()
+    target_link_libraries(SDLBase PRIVATE SDL3::SDL3 SDL3_image::SDL3_image SDL3_mixer::SDL3_mixer SDL3_ttf::SDL3_ttf m)
+endif ()
+
 if (NOT WIN32)
     target_compile_options(SDLBase PRIVATE -Wall -Wextra)
 endif ()

@@ -242,6 +242,30 @@ bool String_isNumeric(const char* str) {
     return endPtr != str && *endPtr == '\0';
 }
 
+char* String_format(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    int size = vsnprintf(NULL, 0, fmt, args);
+    va_end(args);
+
+    if (size < 0) {
+        error("String_format: vsnprintf failed");
+        return NULL;
+    }
+
+    char* buffer = (char*)malloc(size + 1);
+    if (!buffer) {
+        error("String_format: Failed to allocate memory");
+        return NULL;
+    }
+
+    va_start(args, fmt);
+    vsnprintf(buffer, size + 1, fmt, args);
+    va_end(args);
+
+    return buffer;
+}
+
 int modulo(const int a, const int b) {
     return ((a % b) + b) % b;
 }

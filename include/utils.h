@@ -42,6 +42,7 @@ bool String_isNullOrEmpty(const char* str);
 bool String_equals(const char* a, const char* b);
 int String_parseInt(const char* str, int defaultValue);
 float String_parseFloat(const char* str, float defaultValue);
+char* String_format(const char* fmt, ...);
 bool String_isNumeric(const char* str);
 char* String_max(const char** arr, int len);
 char* String_min(const char** arr, int len);

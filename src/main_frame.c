@@ -17,6 +17,8 @@
 #include "utils.h"
 #include "color.h"
 #include "container.h"
+#include "help_frame.h"
+#include "image.h"
 #include "input_box.h"
 #include "resource_manager.h"
 #include "select.h"
@@ -222,6 +224,10 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
             List_push(self->elements, Element_fromBox(box, NULL));
         }
     }
+    Image* help_image = Image_load(self->app , "help.svg", Position_new(0, 0), false);
+    Image_setRatio(help_image, 0.05);
+
+    List_push(self->elements, Element_fromImage(help_image, "help_image"));
 }
 
 void MainFrame_destroy(MainFrame* self) {
@@ -546,25 +552,35 @@ static void MainFrame_loadFile(Input* input, SDL_Event* evt, Button* button) {
 }
 
 static void MainFrame_onClick(Input* input, SDL_Event* evt, MainFrame* self) {
-    if (!self || self->showSettings || self->all_selected || self->graph_count == 1) return;
+    if (!self || self->showSettings || self->all_selected) return;
     float x, y;
     Input_getMousePosition(self->app->input, &x, &y);
 
-    for (int i = 0; i < self->graph_count; i++) {
-        if (i ==  self->selected_graph_index) continue;
-        ColumnGraph* graph = self->graph[i];
-        SDL_FRect focus_graph_rect = { graph->position->x, graph->position->y, graph->size.width, graph->size.height };
-        if (Input_mouseInRect(self->app->input, focus_graph_rect)) {
-            if (self->popup) {
-                ColumnGraph_removeHovering(self->graph[self->selected_graph_index]);
+    if (self->graph_count > 0) {
+        for (int i = 0; i < self->graph_count; i++) {
+            if (i ==  self->selected_graph_index) continue;
+            ColumnGraph* graph = self->graph[i];
+            SDL_FRect focus_graph_rect = { graph->position->x, graph->position->y, graph->size.width, graph->size.height };
+            if (Input_mouseInRect(self->app->input, focus_graph_rect)) {
                 if (self->popup) {
-                    MainFrame_removePopup(self, 0);
+                    ColumnGraph_removeHovering(self->graph[self->selected_graph_index]);
+                    if (self->popup) {
+                        MainFrame_removePopup(self, 0);
+                    }
                 }
+                self->selected_graph_index = i;
+                MainFrame_addElements(self, self->app);
+                break;
             }
-            self->selected_graph_index = i;
-            MainFrame_addElements(self, self->app);
-            break;
         }
+    }
+    Image* image_help = Element_getById(self->elements, "help_image")->data.image;
+    Size size_help_image = Image_getSize(image_help);
+    Position* position_help_image = image_help->position;
+    SDL_FRect help_rect = {position_help_image->x,position_help_image->y, size_help_image.width, size_help_image.height};
+    log_message(LOG_LEVEL_DEBUG,"test");
+    if (Input_mouseInRect(self->app->input, help_rect)) {
+        App_addFrame(self->app, HelpFrame_getFrame(HelpFrame_new(self->app)));
     }
 }
 

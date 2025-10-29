@@ -68,6 +68,7 @@ typedef struct Select Select;
 
 // Frames
 typedef struct MainFrame MainFrame;
+typedef struct HelpFrame HelpFrame;
 
 // Structure who's not used as a pointer elsewhere
 typedef struct {

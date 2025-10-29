@@ -150,3 +150,11 @@ MIX_Audio* ResourceManager_getSound(ResourceManager* self, const char* filename)
     safe_free((void**)&path);
     return sound;
 }
+
+TTF_Font* ResourceManager_getDefaultFont(ResourceManager* self, int size) {
+    return ResourceManager_getFont(self, DEFAULT_FONT, size);
+}
+
+TTF_Font* ResourceManager_getDefaultBoldFont(ResourceManager* self, int size) {
+    return ResourceManager_getFont(self, DEFAULT_BOLD_FONT, size);
+}

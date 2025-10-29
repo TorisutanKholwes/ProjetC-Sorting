@@ -456,3 +456,9 @@ void FlexContainer_clear(FlexContainer* container) {
     ListIterator_destroy(it);
     List_clear(container->items);
 }
+
+void FlexContainer_setSize(FlexContainer* container, float width, float height) {
+    if (!container) return;
+    container->width = width;
+    container->height = height;
+}

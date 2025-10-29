@@ -34,6 +34,7 @@ void ColumnGraph_setGraphType(ColumnGraph* graph, ColumnGraphType type);
 void ColumnGraph_shuffleBars(ColumnGraph* graph);
 void ColumnGraph_sortGraph(ColumnGraph* graph, ListSortType sort_type);
 void ColumnGraph_removeHovering(ColumnGraph* graph);
+void ColumnGraph_renderBar(ColumnGraph* graph, int w, int h);
 void** ColumnGraph_getValues(ColumnGraph* graph, int* out_len);
 void ColumnGraph_resetBars(ColumnGraph* graph);
 

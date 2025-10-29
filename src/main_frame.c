@@ -57,6 +57,8 @@ static void MainFrame_onMouseMove(Input* input, SDL_Event* evt, MainFrame* self)
 
 static void MainFrame_updateHelpImage(MainFrame* self);
 
+static void MainFrame_onWindowResize(Input* input, SDL_Event* evt, MainFrame* self);
+
 MainFrame* MainFrame_new(App* app) {
     MainFrame* self = calloc(1, sizeof(MainFrame));
     if (!self) {
@@ -248,6 +250,7 @@ void MainFrame_destroy(MainFrame* self) {
 
     Input_removeOneEventHandler(self->app->input, SDL_EVENT_MOUSE_BUTTON_DOWN, self);
     Input_removeOneEventHandler(self->app->input, SDL_EVENT_MOUSE_MOTION, self);
+    Input_removeOneEventHandler(self->app->input, SDL_EVENT_WINDOW_RESIZED, self);
 
     Element_destroyList(self->elements);
 
@@ -301,6 +304,7 @@ void MainFrame_focus(MainFrame* self) {
 
     Input_addEventHandler(self->app->input, SDL_EVENT_MOUSE_BUTTON_DOWN, (EventHandlerFunc) MainFrame_onClick, self);
     Input_addEventHandler(self->app->input, SDL_EVENT_MOUSE_MOTION, (EventHandlerFunc) MainFrame_onMouseMove, self);
+    Input_addEventHandler(self->app->input, SDL_EVENT_WINDOW_RESIZED, (EventHandlerFunc) MainFrame_onWindowResize, self);
 }
 
 void MainFrame_unfocus(MainFrame* self) {
@@ -316,6 +320,7 @@ void MainFrame_unfocus(MainFrame* self) {
 
     Input_removeOneEventHandler(self->app->input, SDL_EVENT_MOUSE_BUTTON_DOWN, self);
     Input_removeOneEventHandler(self->app->input, SDL_EVENT_MOUSE_MOTION, self);
+    Input_removeOneEventHandler(self->app->input, SDL_EVENT_WINDOW_RESIZED, self);
 }
 
 Frame* MainFrame_getFrame(MainFrame* self) {
@@ -330,6 +335,8 @@ Frame* MainFrame_getFrame(MainFrame* self) {
 }
 
 static void MainFrame_onEscape(Input* input, SDL_Event* evt, MainFrame* self) {
+    UNUSED(input);
+    UNUSED(evt);
     int w, h;
     SDL_GetWindowSize(self->app->window, &w, &h);
     self->box_animating = true;
@@ -349,6 +356,8 @@ static void MainFrame_onEscape(Input* input, SDL_Event* evt, MainFrame* self) {
 }
 
 static void MainFrame_onRuneS(Input* input, SDL_Event* evt, MainFrame* self) {
+    UNUSED(input);
+    UNUSED(evt);
     if (!self || self->showSettings) return;
     if (self->all_selected) {
         for (int i = 0; i < self->graph_count; i++) {
@@ -420,7 +429,8 @@ static bool MainFrame_createPopup(MainFrame* self, void* value, ColumnGraphType 
     return true;
 }
 
-static bool MainFrame_removePopup(MainFrame* self, void* _, ColumnGraphType __) {
+static bool MainFrame_removePopup(MainFrame* self, void* _, ColumnGraphType type) {
+    UNUSED(type);
     if (!self) return false;
     if (self->popup) {
         Container_destroy(self->popup);
@@ -448,6 +458,8 @@ static void MainFrame_updateGraphs(MainFrame* self) {
 }
 
 static void MainFrame_onRuneP(Input* input, SDL_Event* evt, MainFrame* self) {
+    UNUSED(input);
+    UNUSED(evt);
     if (self->graph_count == MAX_GRAPHS) return;
     if (self->popup) {
         for (int i = 0; i < self->graph_count; i++) {
@@ -462,6 +474,8 @@ static void MainFrame_onRuneP(Input* input, SDL_Event* evt, MainFrame* self) {
 }
 
 static void MainFrame_onRuneM(Input* input, SDL_Event* evt, MainFrame* self) {
+    UNUSED(input);
+    UNUSED(evt);
     if (self->popup) {
         for (int i = 0; i < self->graph_count; i++) {
             ColumnGraph_removeHovering(self->graph[i]);
@@ -480,6 +494,8 @@ static void MainFrame_onRuneM(Input* input, SDL_Event* evt, MainFrame* self) {
 }
 
 static void MainFrame_quitApp(Input* input, SDL_Event* evt, Button* button) {
+    UNUSED(input);
+    UNUSED(evt);
     if (button && button->parent) {
         Container* parent = button->parent;
         if (parent->parent) {
@@ -490,6 +506,8 @@ static void MainFrame_quitApp(Input* input, SDL_Event* evt, Button* button) {
 }
 
 static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self) {
+    UNUSED(input);
+    UNUSED(evt);
     if (!self || self->showSettings) return;
     bool hasPopup = self->popup != NULL;
     if (self->all_selected) {
@@ -509,6 +527,8 @@ static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self) {
 }
 
 static void MainFrame_onEnter(Input* input, SDL_Event* evt, MainFrame* self) {
+    UNUSED(input);
+    UNUSED(evt);
     if (!self || !self->showSettings) return;
     Container* container = Element_getById(self->elements, "settings")->data.container;
 
@@ -522,6 +542,9 @@ static void MainFrame_onEnter(Input* input, SDL_Event* evt, MainFrame* self) {
     if (barCount <= 0 || graphCount <= 0) {
         return;
     }
+    if (graphCount > MAX_GRAPHS) {
+        return;
+    }
     self->bar_count = barCount;
     for (int i = 0; i < self->graph_count; i++) {
         ColumnGraph_destroy(self->graph[i]);
@@ -531,6 +554,7 @@ static void MainFrame_onEnter(Input* input, SDL_Event* evt, MainFrame* self) {
 }
 
 static void MainFrame_loadFileCallback(void* userdata, const char* const* filelist, int filter) {
+    UNUSED(filter);
     if (!filelist) {
         error("Error loading file : %s", SDL_GetError());
         return;
@@ -603,6 +627,8 @@ static void MainFrame_loadFileCallback(void* userdata, const char* const* fileli
 }
 
 static void MainFrame_loadFile(Input* input, SDL_Event* evt, Button* button) {
+    UNUSED(input);
+    UNUSED(evt);
     if (button && button->parent) {
         Container* parent = button->parent;
         if (parent->parent) {
@@ -614,6 +640,8 @@ static void MainFrame_loadFile(Input* input, SDL_Event* evt, Button* button) {
 }
 
 static void MainFrame_onClick(Input* input, SDL_Event* evt, MainFrame* self) {
+    UNUSED(input);
+    UNUSED(evt);
     if (!self || self->showSettings || self->all_selected) return;
     float x, y;
     Input_getMousePosition(self->app->input, &x, &y);
@@ -648,12 +676,16 @@ static void MainFrame_onClick(Input* input, SDL_Event* evt, MainFrame* self) {
 }
 
 static void MainFrame_onRuneA(Input* input, SDL_Event* evt, MainFrame* self) {
+    UNUSED(input);
+    UNUSED(evt);
     if (!self || self->showSettings) return;
     self->all_selected = !self->all_selected;
     MainFrame_addElements(self, self->app);
 }
 
 static void MainFrame_onGraphThemeChange(Input* input, SDL_Event* evt, Select* select) {
+    UNUSED(input);
+    UNUSED(evt);
     int selected = Select_getSelectedIndex(select);
     if (selected < 0) return;
     Container* parent = select->parent;
@@ -665,15 +697,17 @@ static void MainFrame_onGraphThemeChange(Input* input, SDL_Event* evt, Select* s
             ColumnGraph_removeHovering(self->graph[i]);
         }
         int len;
-        int* values = ColumnGraph_getValues(self->graph[i], &len);
+        void** voidValues = ColumnGraph_getValues(self->graph[i], &len);
         ColumnGraph_resetBars(self->graph[i]);
-        ColumnGraph_initBars(self->graph[i], len, values, self->graph_style);
-        safe_free((void **) &values);
+        ColumnGraph_initBars(self->graph[i], len, voidValues, self->graph_style);
+        safe_free((void **) &voidValues);
     }
     MainFrame_addElements(self, self->app);
 }
 
 static void MainFrame_onMouseMove(Input* input, SDL_Event* evt, MainFrame* self) {
+    UNUSED(input);
+    UNUSED(evt);
     if (!self || self->showSettings) return;
     Image* img = Element_getById(self->elements, "help_image")->data.image;
     Size imgSize = Image_getSize(img);
@@ -694,4 +728,20 @@ static void MainFrame_updateHelpImage(MainFrame* self) {
     } else {
         Image_changePath(img, self->app, "help_white.svg");
     }
+}
+
+static void MainFrame_onWindowResize(Input* input, SDL_Event* evt, MainFrame* self) {
+    UNUSED(input);
+    UNUSED(evt);
+    if (!self) return;
+    int w, h;
+    SDL_GetWindowSize(self->app->window, &w, &h);
+    if (w < WINDOW_WIDTH || h < WINDOW_HEIGHT) {
+        SDL_SetWindowSize(self->app->window, WINDOW_WIDTH, WINDOW_HEIGHT);
+        return;
+    }
+    for (int i = 0; i < self->graph_count; i++) {
+        ColumnGraph_renderBar(self->graph[i], w, h);
+    }
+    MainFrame_addElements(self, self->app);
 }

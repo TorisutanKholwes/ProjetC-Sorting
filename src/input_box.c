@@ -162,7 +162,6 @@ void InputBox_setStringf(InputBox *self, const char *format, ...) {
     vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
     self->str = Strdup(buffer);
-    int len = strlen(self->str);
     self->cursor_index = fmaxf(0, strlen(self->str));
     Text_setString(self->text, buffer);
 }

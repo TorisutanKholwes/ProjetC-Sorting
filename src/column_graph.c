@@ -63,7 +63,7 @@ void ColumnGraph_initBars(ColumnGraph* graph, const int bars_count, void** value
     void* max;
     switch (graph->type) {
         case GRAPH_TYPE_INT:
-            max = (void*) arrayMax((void**)values, bars_count);
+            max = (void*) arrayMax(voidToLongArray(values, bars_count), bars_count);
             break;
         case GRAPH_TYPE_STRING:
             max = (void*) String_max((const char**)values, bars_count);
@@ -91,6 +91,10 @@ void ColumnGraph_initBars(ColumnGraph* graph, const int bars_count, void** value
         List_push(graph->bars, graph_bar);
         FlexContainer_addElement(graph->container, graph_bar->element, 1.f, 1.f, -1.f);
     }
+    for (int i = 0; i < numColors; i++) {
+        Color_destroy(colors[i]);
+    }
+    safe_free((void**)&colors);
 }
 
 void ColumnGraph_initBarsIncrement(ColumnGraph* graph, int bars_count, ColumnGraphStyle style) {
@@ -103,7 +107,7 @@ void ColumnGraph_initBarsIncrement(ColumnGraph* graph, int bars_count, ColumnGra
     for (int i = 0; i < bars_count; i++) {
         values[i] = i + 1;
     }
-    ColumnGraph_initBars(graph, bars_count, values, style);
+    ColumnGraph_initBars(graph, bars_count, longToVoidArray(values, bars_count), style);
     safe_free((void**)&values);
 }
 
@@ -147,6 +151,32 @@ void ColumnGraph_removeHovering(ColumnGraph* graph) {
     }
 }
 
+void ColumnGraph_renderBar(ColumnGraph* graph, int w, int h) {
+    if (!graph) return;
+    FlexContainer_clear(graph->container);
+    FlexContainer_setSize(graph->container, w, h);
+    graph->size.width = w;
+    graph->size.height = h;
+    graph->hovered = false;
+    if (graph->hoveredBar) {
+        graph->hoveredBar = NULL;
+    }
+
+    int val_count;
+    void** values = ColumnGraph_getValues(graph, &val_count);
+    if (!values) return;
+
+    ListIterator* it = ListIterator_new(graph->bars);
+    while (ListIterator_hasNext(it)) {
+        ColumnGraphBar_destroy(ListIterator_next(it));
+    }
+    ListIterator_destroy(it);
+    List_clear(graph->bars);
+    ColumnGraph_initBars(graph, val_count, values, graph->graph_style);
+
+    safe_free((void**)&values);
+}
+
 void** ColumnGraph_getValues(ColumnGraph* graph, int* out_len) {
     if (!graph) {
         *out_len = 0;
@@ -184,7 +214,7 @@ void ColumnGraph_resetBars(ColumnGraph* graph) {
 static float ColumnGraphBar_calculateBarHeight(void* value, float height, void* max_value, ColumnGraphType type) {
     switch (type) {
         case GRAPH_TYPE_INT:
-            return ((int)value) * height / ((int)max_value);
+            return ((int)(long)value) * height / ((int)(long)max_value);
         case GRAPH_TYPE_STRING:
             int len = strlen(value);
             int max_len = strlen(max_value);
@@ -221,6 +251,7 @@ void ColumnGraphBar_setValue(ColumnGraphBar* bar, void* value) {
 }
 
 static void ColumnGraph_handleMouseMotion(Input* input, SDL_Event* evt, ColumnGraph* graph) {
+    UNUSED(evt);
     ListIterator* it = ListIterator_new(graph->bars);
     while (ListIterator_hasNext(it)) {
         ColumnGraphBar* bar = (ColumnGraphBar*)ListIterator_next(it);
@@ -261,14 +292,14 @@ static void ColumnGraph_handleMouseMotion(Input* input, SDL_Event* evt, ColumnGr
 }
 
 int ColumnGraphBar_compare(const void* a, const void* b) {
-    ColumnGraphBar* bar = a;
-    ColumnGraphBar* other = b;
+    ColumnGraphBar* bar = (ColumnGraphBar*)a;
+    ColumnGraphBar* other = (ColumnGraphBar*)b;
     if (bar->parent->type != other->parent->type) {
         return 0;
     }
     switch (bar->parent->type) {
         case GRAPH_TYPE_INT:
-            return ((int)bar->value) - ((int)other->value);
+            return ((int)(long)bar->value) - ((int)(long)other->value);
         case GRAPH_TYPE_STRING:
             return String_compare((const char*)bar->value, (const char*)other->value);
         default:

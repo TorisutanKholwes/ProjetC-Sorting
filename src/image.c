@@ -9,8 +9,6 @@
 #include "resource_manager.h"
 #include "utils.h"
 
-static SDL_Texture* Image_CreateScaledTexture(SDL_Texture* texture, SDL_Renderer* renderer, float new_width, float new_height);
-
 Image* Image_new(SDL_Texture* texture, Position* position, bool from_center) {
     Image* self = calloc(1, sizeof(Image));
     if (!self) {
@@ -138,19 +136,4 @@ void Image_changePath(Image* self, App* app, const char* path) {
         return;
     }
     Image_setTexture(self, texture);
-}
-
-static SDL_Texture* Image_CreateScaledTexture(SDL_Texture* texture, SDL_Renderer* renderer, float new_width, float new_height) {
-    SDL_Texture* scaled = SDL_CreateTexture(renderer,
-        SDL_PIXELFORMAT_RGBA8888,
-        SDL_TEXTUREACCESS_TARGET,
-        new_width, new_height);
-
-    SDL_SetRenderTarget(renderer, scaled);
-
-    SDL_RenderTexture(renderer, texture, NULL, NULL);
-
-    SDL_SetRenderTarget(renderer, NULL);
-
-    return scaled;
 }

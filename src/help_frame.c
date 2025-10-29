@@ -19,9 +19,11 @@
 #include "utils.h"
 
 
-static void HelpFrame_addElements(HelpFrame *self, App *app);
+static void HelpFrame_addElements(HelpFrame* self, App* app);
 
-HelpFrame *HelpFrame_new(App *app) {
+static void HelpFrame_add_text_and_image(HelpFrame* self, App* app);
+
+HelpFrame* HelpFrame_new(App *app) {
     HelpFrame *self = calloc(1, sizeof(HelpFrame));
     if (!self) {
         error("Failed to allocate memory for HelpFrame");
@@ -77,6 +79,22 @@ static void HelpFrame_addElements(HelpFrame *self, App *app) {
                             false,
                             "explication de A");
     List_push(self->elements, Element_fromText(text_A, NULL));
+
+
+    Position *position_Q = Position_new(0, (h / 8) * 3);
+    Image *image_Q = Image_load(self->app, "letter_A.svg", position_Q, false);
+    Image_setRatio(image_Q, 0.05);
+    List_push(self->elements, Element_fromImage(image_Q, NULL));
+    Size size_image_Q = Image_getSize(image_Q);
+    TextStyle *text_Q_style = TextStyle_new(
+        ResourceManager_getDefaultBoldFont(app->manager, 20),
+        20, COLOR_WHITE, TTF_STYLE_NORMAL);
+    Text *text_Q = Text_new(app->renderer,
+                            text_Q_style,
+                            Position_new(position_Q->x + 10 + size_image_A.width, position_Q->y+5),
+                            false,
+                            "explication de Q");
+    List_push(self->elements, Element_fromText(text_Q, NULL));
 }
 
 void HelpFrame_destroy(HelpFrame *self) {
@@ -117,3 +135,5 @@ Frame *HelpFrame_getFrame(HelpFrame *self) {
     Frame_setTitle(frame, "HelpFrame");
     return frame;
 }
+
+

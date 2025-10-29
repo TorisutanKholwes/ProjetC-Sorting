@@ -105,6 +105,9 @@ void Image_setSize(Image* self, float width, float height) {
 
 Size Image_getSize(Image* self) {
     if (!self) return (Size){-1, -1};
+    if (!self->custom_size) {
+        return (Size){ self->size.width * self->ratio, self->size.height * self->ratio };
+    }
     return self->size;
 }
 

@@ -225,7 +225,7 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
             List_push(self->elements, Element_fromBox(box, NULL));
         }
     }
-    Image* help_image = Image_load(self->app , "help.svg", Position_new(0, 0), false);
+    Image* help_image = Image_load(self->app , "help_white.svg", Position_new(0, 0), false);
     Image_setRatio(help_image, 0.05);
 
     List_push(self->elements, Element_fromImage(help_image, "help_image"));

@@ -173,7 +173,6 @@ char* Select_getSelectedOption(Select* select) {
 }
 
 static void Select_checkPressed(Input* input, SDL_Event* evt, Select* select) {
-    log_message(LOG_LEVEL_DEBUG, "Select_checkPressed called");
     EdgeInsets* paddings = select->style->paddings;
     SDL_FRect fullRect;
     if (select->from_center) {

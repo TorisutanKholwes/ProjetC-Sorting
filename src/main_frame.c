@@ -118,14 +118,18 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
     }
 
     self->settings_width = 300;
+    float baseWidth = w;
+    if (self->showSettings) {
+        baseWidth -= self->settings_width;
+    }
     int y = 10;
 
-    Container* container = Container_new(w, 0, self->settings_width, h, Color_rgba(0, 0, 0, 200), self);
+    Container* container = Container_new(baseWidth, 0, self->settings_width, h, Color_rgba(0, 0, 0, 200), self);
     Text* titleText = Text_new(app->renderer,
                                TextStyle_new(
                                    ResourceManager_getDefaultBoldFont(app->manager, 36),
                                    36, COLOR_WHITE, TTF_STYLE_UNDERLINE),
-                               Position_new(w + 10, 10),
+                               Position_new(baseWidth + 10, 10),
                                false,
                                "Settings"
     );
@@ -137,13 +141,13 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
                                TextStyle_new(
                                    ResourceManager_getDefaultBoldFont(app->manager, 24), 24, COLOR_WHITE,
                                    TTF_STYLE_NORMAL),
-                               Position_new(w + 10, y), false, "Bar Count:");
+                               Position_new(baseWidth + 10, y), false, "Bar Count:");
 
     y += Text_getSize(barText).height + 10;
 
     int inputHeight = 40;
     InputBox* inputBar = InputBox_new(self->app,
-                                      SDL_CreateRect(w + 10, y, self->settings_width - 24, inputHeight, false),
+                                      SDL_CreateRect(baseWidth + 10, y, self->settings_width - 24, inputHeight, false),
                                       InputBoxStyle_default(self->app->manager),
                                       container);
     InputBox_setStringf(inputBar, "%d", self->bar_count);
@@ -157,11 +161,11 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
                              TextStyle_new(
                                  ResourceManager_getDefaultBoldFont(app->manager, 24), 24, COLOR_WHITE,
                                  TTF_STYLE_NORMAL),
-                             Position_new(w + 10, y), false, "Graph Count:");
+                             Position_new(baseWidth + 10, y), false, "Graph Count:");
     y += Text_getSize(graphText).height + 10;
 
     InputBox* inputGraph = InputBox_new(self->app,
-                                        SDL_CreateRect(w + 10, y, self->settings_width - 24, inputHeight, false),
+                                        SDL_CreateRect(baseWidth + 10, y, self->settings_width - 24, inputHeight, false),
                                         InputBoxStyle_default(self->app->manager),
                                         container);
     InputBox_setStringf(inputGraph, "%d", self->graph_count);
@@ -174,11 +178,11 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
     for (int i = 0; i < GRAPH_STYLE_COUNT; i++) {
         List_push(options, ColumnGraph_getStyleName(i));
     }
-    Select* select = Select_new(app, Position_new(w, y), false,
+    Select* select = Select_new(app, Position_new(baseWidth, y), false,
                                 SelectStyle_default(self->app->manager), container,
                                 options, 0);
     int selectWidth = Select_getSize(select).width;
-    Select_setPosition(select, w + ((self->settings_width -  selectWidth) / 2), y);
+    Select_setPosition(select, baseWidth + ((self->settings_width -  selectWidth) / 2), y);
     Select_setSelectedIndex(select, self->graph_style);
     Select_onChange(select, (EventHandlerFunc) MainFrame_onGraphThemeChange);
     Container_addChild(container, Element_fromSelect(select, NULL));
@@ -187,18 +191,18 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
 
     float buttonXOffset = 20;
     Button* closeButton = Button_new(self->app,
-                                     Position_new(w + buttonXOffset, h - 75),
+                                     Position_new(baseWidth + buttonXOffset, h - 75),
                                      false,
                                      ButtonStyle_default(self->app->manager),
                                      container,
-                                     "Close"
+                                     "Quit"
     );
     Button_onClick(closeButton, (EventHandlerFunc) MainFrame_quitApp);
     Container_addChild(container, Element_fromButton(closeButton, NULL));
 
     Size closeSize = Button_getSize(closeButton);
     Button* loadButton = Button_new(self->app,
-        Position_new(w + closeSize.width + 15 + buttonXOffset, h - 75),
+        Position_new(baseWidth + closeSize.width + 15 + buttonXOffset, h - 75),
         false,
         ButtonStyle_default(self->app->manager),
         container,
@@ -472,7 +476,6 @@ static void MainFrame_onEnter(Input* input, SDL_Event* evt, MainFrame* self) {
         return;
     }
     self->bar_count = barCount;
-    self->showSettings = false;
     for (int i = 0; i < self->graph_count; i++) {
         ColumnGraph_destroy(self->graph[i]);
     }
@@ -488,7 +491,7 @@ static void MainFrame_loadFileCallback(void* userdata, const char* const* fileli
     const char* filename = filelist[0];
     FILE* file = fopen(filename, "r");
     if (!file) {
-        error("Failed to open file: %s", filename);
+        log_message(LOG_LEVEL_WARN, "No file selected or failed to open file");
         return;
     }
     MainFrame* self = userdata;
@@ -504,7 +507,6 @@ static void MainFrame_loadFileCallback(void* userdata, const char* const* fileli
         fscanf(file, "%d", &values[i]);
     }
     fclose(file);
-    self->showSettings = false;
     if (self->all_selected) {
         for (int i = 0; i < self->graph_count; i++) {
             ColumnGraph* graph = self->graph[i];
@@ -573,18 +575,21 @@ static void MainFrame_onRuneA(Input* input, SDL_Event* evt, MainFrame* self) {
 }
 
 static void MainFrame_onGraphThemeChange(Input* input, SDL_Event* evt, Select* select) {
-    log_message(LOG_LEVEL_DEBUG, "MainFrame_onGraphThemeChange called");
     int selected = Select_getSelectedIndex(select);
     if (selected < 0) return;
     Container* parent = select->parent;
     if (!parent || !parent->parent) return;
     MainFrame* self = parent->parent;
     self->graph_style = selected;
-    self->showSettings = false;
     for (int i = 0; i < self->graph_count; i++) {
         if (self->popup) {
             ColumnGraph_removeHovering(self->graph[i]);
         }
+        int len;
+        int* values = ColumnGraph_getValues(self->graph[i], &len);
+        ColumnGraph_resetBars(self->graph[i]);
+        ColumnGraph_initBars(self->graph[i], len, values, self->graph_style);
+        safe_free((void**)&values);
     }
-    MainFrame_updateGraphs(self);
+    MainFrame_addElements(self, self->app);
 }

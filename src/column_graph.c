@@ -138,6 +138,40 @@ void ColumnGraph_removeHovering(ColumnGraph* graph) {
     }
 }
 
+int* ColumnGraph_getValues(ColumnGraph* graph, int* out_len) {
+    if (!graph) {
+        *out_len = 0;
+        return NULL;
+    }
+    int count = List_size(graph->bars);
+    int* values = calloc(count, sizeof(int));
+    if (!values) {
+        error("Failed to allocate memory for ColumnGraph values");
+        *out_len = 0;
+        return NULL;
+    }
+    ListIterator* it = ListIterator_new(graph->bars);
+    int index = 0;
+    while (ListIterator_hasNext(it)) {
+        ColumnGraphBar* bar = (ColumnGraphBar*)ListIterator_next(it);
+        values[index++] = bar->value;
+    }
+    ListIterator_destroy(it);
+    *out_len = count;
+    return values;
+}
+
+void ColumnGraph_resetBars(ColumnGraph* graph) {
+    if (!graph) return;
+    FlexContainer_clear(graph->container);
+    ListIterator* it = ListIterator_new(graph->bars);
+    while (ListIterator_hasNext(it)) {
+        ColumnGraphBar_destroy(ListIterator_next(it));
+    }
+    ListIterator_destroy(it);
+    List_clear(graph->bars);
+}
+
 ColumnGraphBar* ColumnGraphBar_new(int value, Color* color, float height, float max_value) {
     ColumnGraphBar* bar = calloc(1, sizeof(ColumnGraphBar));
     if (!bar) {

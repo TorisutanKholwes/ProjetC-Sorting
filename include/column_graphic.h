@@ -31,6 +31,8 @@ void ColumnGraph_initBarsIncrement(ColumnGraph* graph, int bars_count, ColumnGra
 void ColumnGraph_shuffleBars(ColumnGraph* graph);
 void ColumnGraph_sortGraph(ColumnGraph* graph, ListSortType sort_type);
 void ColumnGraph_removeHovering(ColumnGraph* graph);
+int* ColumnGraph_getValues(ColumnGraph* graph, int* out_len);
+void ColumnGraph_resetBars(ColumnGraph* graph);
 
 struct ColumnGraphBar {
     int value;

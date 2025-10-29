@@ -9,6 +9,7 @@
 #include "container.h"
 #include "element.h"
 #include "frame.h"
+#include "input.h"
 #include "list.h"
 #include "logger.h"
 #include "resource_manager.h"
@@ -70,6 +71,10 @@ void HelpFrame_render(SDL_Renderer *renderer, HelpFrame *self) {
 
 void HelpFrame_update(HelpFrame *self) {
     Element_updateList(self->elements);
+
+    if (self->app->input->esc) {
+       App_frameBack(self->app);
+    }
 }
 
 void HelpFrame_focus(HelpFrame *self) {

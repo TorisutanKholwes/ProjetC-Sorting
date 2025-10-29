@@ -66,3 +66,9 @@ void Container_unFocus(Container* container) {
 
     Element_unfocusList(container->children);
 }
+
+void Container_setSize(Container* container, float width, float height) {
+    if (!container) return;
+
+    container->box->size = (Size) {width, height};
+}

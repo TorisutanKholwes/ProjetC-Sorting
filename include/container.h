@@ -21,3 +21,4 @@ void Container_render(Container* container, SDL_Renderer* renderer);
 void Container_update(Container* container);
 void Container_focus(Container* container);
 void Container_unFocus(Container* container);
+void Container_setSize(Container* container, float width, float height);

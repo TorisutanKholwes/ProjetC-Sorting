@@ -17,6 +17,7 @@ struct InputBox {
     SDL_FRect rect;
 
     char* str;
+    int cursor_index;
     bool password_mode;
 
     InputBoxStyle* style;

@@ -41,9 +41,9 @@ static void MainFrame_onEnter(Input* input, SDL_Event* evt, MainFrame* self);
 
 static void MainFrame_onClick(Input* input, SDL_Event* evt, MainFrame* self);
 
-static bool MainFrame_createPopup(MainFrame* self, float value);
+static bool MainFrame_createPopup(MainFrame* self, void* value, ColumnGraphType type);
 
-static bool MainFrame_removePopup(MainFrame* self, float value);
+static bool MainFrame_removePopup(MainFrame* self, void* value, ColumnGraphType type);
 
 static void MainFrame_quitApp(Input* input, SDL_Event* evt, Button* button);
 
@@ -79,10 +79,10 @@ MainFrame* MainFrame_new(App* app) {
         return NULL;
     }
     self->bar_count = 50;
-    self->selected_graph_index =0;
+    self->selected_graph_index = 0;
     self->graph_style = GRAPH_RAINBOW;
     for (int i = 0; i < self->graph_count; i++) {
-        self->graph[i] = ColumnGraph_new(w, h, Position_new(0, 0), app->input, self,
+        self->graph[i] = ColumnGraph_new(w, h, Position_new(0, 0), app->input, self, GRAPH_TYPE_INT,
                                          (ColumnsHoverFunc) MainFrame_createPopup,
                                          (ColumnsHoverFunc) MainFrame_removePopup);
         ColumnGraph_initBarsIncrement(self->graph[i], self->bar_count, self->graph_style);
@@ -140,10 +140,10 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
 
     // Input change bar count
     Text* barText = Text_new(app->renderer,
-                               TextStyle_new(
-                                   ResourceManager_getDefaultBoldFont(app->manager, 24), 24, COLOR_WHITE,
-                                   TTF_STYLE_NORMAL),
-                               Position_new(baseWidth + 10, y), false, "Bar Count:");
+                             TextStyle_new(
+                                 ResourceManager_getDefaultBoldFont(app->manager, 24), 24, COLOR_WHITE,
+                                 TTF_STYLE_NORMAL),
+                             Position_new(baseWidth + 10, y), false, "Bar Count:");
 
     y += Text_getSize(barText).height + 10;
 
@@ -160,14 +160,15 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
 
     // Input change graph count
     Text* graphText = Text_new(app->renderer,
-                             TextStyle_new(
-                                 ResourceManager_getDefaultBoldFont(app->manager, 24), 24, COLOR_WHITE,
-                                 TTF_STYLE_NORMAL),
-                             Position_new(baseWidth + 10, y), false, "Graph Count:");
+                               TextStyle_new(
+                                   ResourceManager_getDefaultBoldFont(app->manager, 24), 24, COLOR_WHITE,
+                                   TTF_STYLE_NORMAL),
+                               Position_new(baseWidth + 10, y), false, "Graph Count:");
     y += Text_getSize(graphText).height + 10;
 
     InputBox* inputGraph = InputBox_new(self->app,
-                                        SDL_CreateRect(baseWidth + 10, y, self->settings_width - 24, inputHeight, false),
+                                        SDL_CreateRect(baseWidth + 10, y, self->settings_width - 24, inputHeight,
+                                                       false),
                                         InputBoxStyle_default(self->app->manager),
                                         container);
     InputBox_setStringf(inputGraph, "%d", self->graph_count);
@@ -184,7 +185,7 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
                                 SelectStyle_default(self->app->manager), container,
                                 options, 0);
     int selectWidth = Select_getSize(select).width;
-    Select_setPosition(select, baseWidth + ((self->settings_width -  selectWidth) / 2), y);
+    Select_setPosition(select, baseWidth + ((self->settings_width - selectWidth) / 2), y);
     Select_setSelectedIndex(select, self->graph_style);
     Select_onChange(select, (EventHandlerFunc) MainFrame_onGraphThemeChange);
     Container_addChild(container, Element_fromSelect(select, NULL));
@@ -204,11 +205,11 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
 
     Size closeSize = Button_getSize(closeButton);
     Button* loadButton = Button_new(self->app,
-        Position_new(baseWidth + closeSize.width + 15 + buttonXOffset, h - 75),
-        false,
-        ButtonStyle_default(self->app->manager),
-        container,
-        "Load file");
+                                    Position_new(baseWidth + closeSize.width + 15 + buttonXOffset, h - 75),
+                                    false,
+                                    ButtonStyle_default(self->app->manager),
+                                    container,
+                                    "Load file");
     Button_onClick(loadButton, (EventHandlerFunc) MainFrame_loadFile);
     Container_addChild(container, Element_fromButton(loadButton, NULL));
 
@@ -340,18 +341,24 @@ static void MainFrame_onEscape(Input* input, SDL_Event* evt, MainFrame* self) {
 
 static void MainFrame_onRuneS(Input* input, SDL_Event* evt, MainFrame* self) {
     if (!self || self->showSettings) return;
-    bool hasPopup = self->popup != NULL;
-    for (int i = 0; i < self->graph_count; i++) {
-        if (hasPopup) {
-            ColumnGraph_removeHovering(self->graph[i]);
+    if (self->all_selected) {
+        for (int i = 0; i < self->graph_count; i++) {
+            if (self->popup) {
+                ColumnGraph_removeHovering(self->graph[i]);
+            }
+            ColumnGraph_shuffleBars(self->graph[i]);
         }
-        ColumnGraph_shuffleBars(self->graph[i]);
+    } else {
+        if (self->popup) {
+            ColumnGraph_removeHovering(self->graph[self->selected_graph_index]);
+        }
+        ColumnGraph_shuffleBars(self->graph[self->selected_graph_index]);
     }
     MainFrame_addElements(self, self->app);
 }
 
-static bool MainFrame_createPopup(MainFrame* self, float value) {
-    if (!self ||  self->showSettings) return false;
+static bool MainFrame_createPopup(MainFrame* self, void* value, ColumnGraphType type) {
+    if (!self || self->showSettings) return false;
     if (self->popup) return true;
     int w, h;
     SDL_GetWindowSize(self->app->window, &w, &h);
@@ -360,29 +367,51 @@ static bool MainFrame_createPopup(MainFrame* self, float value) {
 
     if (!self->all_selected) {
         ColumnGraph* graph = self->graph[self->selected_graph_index];
-        SDL_FRect focus_graph_rect = { graph->position->x, graph->position->y, graph->size.width, graph->size.height };
+        SDL_FRect focus_graph_rect = {graph->position->x, graph->position->y, graph->size.width, graph->size.height};
         if (!Input_mouseInRect(self->app->input, focus_graph_rect)) {
             return false;
         }
     }
+    float popupWidth = 120;
+    float popupHeight = 40;
+    float popupX = x - 50 < 0 ? 0 : x - 50 + popupWidth > w ? w - popupWidth : x - 50;
+    float popupY = y - 50 < 0 ? 0 : y - 50 + popupHeight > h ? h - popupHeight : y - 50;
+    self->popup = Container_new(popupX, popupY, popupWidth, popupHeight, Color_copy(COLOR_BLACK), self);
+    char* format;
+    switch (type) {
+        case GRAPH_TYPE_INT:
+            format = "Value : %d";
+            break;
+        case GRAPH_TYPE_STRING:
+            format = "Value : %s";
+            break;
+        default:
+            format = "Value : %d";
+            break;
+    }
+    Text* popupLabel = Text_newf(self->app->renderer,
+                                 TextStyle_new(
+                                     ResourceManager_getDefaultBoldFont(
+                                         self->app->manager, 20), 20, COLOR_WHITE,
+                                     TTF_STYLE_NORMAL),
+                                 Position_new(popupX + 10, popupY),
+                                 false,
+                                    format, value
+    );
+    Size txtSize = Text_getSize(popupLabel);
+    if (txtSize.width + 20 > popupWidth) {
+        Container_setSize(self->popup, txtSize.width + 20, popupHeight);
+        popupX = x - 50 < 0 ? 0 : x - 50 + popupWidth > w ? w - popupWidth : x - 50;
+        popupY = y - 50 < 0 ? 0 : y - 50 + popupHeight > h ? h - popupHeight : y - 50;
+        Text_setPosition(popupLabel, popupX + 10, popupY);
+    }
 
-    float popupX = x - 50 < 0 ? 0 : x - 50 + 120 > w ? w - 120 : x - 50;
-    float popupY = y - 50 < 0 ? 0 : y - 50 + 40 > h ? h - 40 : y - 50;
-    self->popup = Container_new(popupX, popupY, 120, 40, Color_copy(COLOR_BLACK), self);
-    Container_addChild(self->popup, Element_fromText(Text_newf(self->app->renderer,
-                                                               TextStyle_new(
-                                                                   ResourceManager_getDefaultBoldFont(
-                                                                       self->app->manager, 20), 20, COLOR_WHITE,
-                                                                   TTF_STYLE_NORMAL),
-                                                               Position_new(popupX, popupY),
-                                                               false,
-                                                               "Value : %d", (int) value
-                                                     ), NULL));
+    Container_addChild(self->popup, Element_fromText(popupLabel, NULL));
 
     return true;
 }
 
-static bool MainFrame_removePopup(MainFrame* self, float _) {
+static bool MainFrame_removePopup(MainFrame* self, void* _, ColumnGraphType __) {
     if (!self) return false;
     if (self->popup) {
         Container_destroy(self->popup);
@@ -401,7 +430,7 @@ static void MainFrame_updateGraphs(MainFrame* self) {
         float height = h / (graphs / 2);
         float x = (i % 2) * width;
         float y = (i / 2) * height;
-        self->graph[i] = ColumnGraph_new(width, height, Position_new(x, y), self->app->input, self,
+        self->graph[i] = ColumnGraph_new(width, height, Position_new(x, y), self->app->input, self, GRAPH_TYPE_INT,
                                          (ColumnsHoverFunc) MainFrame_createPopup,
                                          (ColumnsHoverFunc) MainFrame_removePopup);
         ColumnGraph_initBarsIncrement(self->graph[i], self->bar_count, self->graph_style);
@@ -430,6 +459,9 @@ static void MainFrame_onRuneM(Input* input, SDL_Event* evt, MainFrame* self) {
         }
     }
     if (self->graph_count > 1) {
+        if (self->selected_graph_index == self->graph_count - 1) {
+            self->selected_graph_index--;
+        }
         self->graph_count--;
         for (int i = 0; i < self->graph_count + 1; i++) {
             ColumnGraph_destroy(self->graph[i]);
@@ -503,14 +535,33 @@ static void MainFrame_loadFileCallback(void* userdata, const char* const* fileli
     MainFrame* self = userdata;
     int values_len;
     fscanf(file, "%d", &values_len);
-    int* values = calloc(values_len, sizeof(int));
+    void** values = calloc(values_len, sizeof(void*));
     if (!values) {
         error("Failed to allocate memory for values");
         fclose(file);
         return;
     }
-    for (int i = 0; i < values_len; i++) {
-        fscanf(file, "%d", &values[i]);
+    char typeString[64];
+    fscanf(file, "%s", typeString);
+    ColumnGraphType type = String_equals(typeString, "int") ? GRAPH_TYPE_INT : String_equals(typeString, "string") ? GRAPH_TYPE_STRING : GRAPH_TYPE_INT;
+    char* format;
+    switch (type) {
+        case GRAPH_TYPE_INT:
+            format = "%ld";
+            for (int i = 0; i < values_len; i++) {
+                fscanf(file, format, &values[i]);
+            }
+            break;
+        case GRAPH_TYPE_STRING:
+            format = "%s";
+            for (int i = 0; i < values_len; i++) {
+                char buffer[256];
+                fscanf(file, format, buffer);
+                values[i] = Strdup(buffer);
+            }
+            break;
+        default:
+            break;
     }
     fclose(file);
     if (self->all_selected) {
@@ -522,6 +573,7 @@ static void MainFrame_loadFileCallback(void* userdata, const char* const* fileli
             }
             ListIterator_destroy(it);
             List_clear(graph->bars);
+            ColumnGraph_setGraphType(graph, type);
             FlexContainer_clear(graph->container);
             ColumnGraph_initBars(graph, values_len, values, self->graph_style);
         }
@@ -533,10 +585,11 @@ static void MainFrame_loadFileCallback(void* userdata, const char* const* fileli
         }
         ListIterator_destroy(it);
         List_clear(graph->bars);
+        ColumnGraph_setGraphType(graph, type);
         FlexContainer_clear(graph->container);
         ColumnGraph_initBars(graph, values_len, values, self->graph_style);
     }
-    safe_free((void**)&values);
+    safe_free((void **) &values);
     MainFrame_addElements(self, self->app);
 }
 
@@ -545,7 +598,7 @@ static void MainFrame_loadFile(Input* input, SDL_Event* evt, Button* button) {
         Container* parent = button->parent;
         if (parent->parent) {
             MainFrame* mainFrame = parent->parent;
-            const SDL_DialogFileFilter filters[] = { {"Text File", "txt"} };
+            const SDL_DialogFileFilter filters[] = {{"Text File", "txt"}};
             SDL_ShowOpenFileDialog(MainFrame_loadFileCallback, mainFrame, mainFrame->app->window, filters, 1, NULL, 0);
         }
     }
@@ -565,7 +618,7 @@ static void MainFrame_onClick(Input* input, SDL_Event* evt, MainFrame* self) {
                 if (self->popup) {
                     ColumnGraph_removeHovering(self->graph[self->selected_graph_index]);
                     if (self->popup) {
-                        MainFrame_removePopup(self, 0);
+                        MainFrame_removePopup(self, 0, GRAPH_TYPE_INT);
                     }
                 }
                 self->selected_graph_index = i;
@@ -578,7 +631,6 @@ static void MainFrame_onClick(Input* input, SDL_Event* evt, MainFrame* self) {
     Size size_help_image = Image_getSize(image_help);
     Position* position_help_image = image_help->position;
     SDL_FRect help_rect = {position_help_image->x,position_help_image->y, size_help_image.width, size_help_image.height};
-    log_message(LOG_LEVEL_DEBUG,"test");
     if (Input_mouseInRect(self->app->input, help_rect)) {
         App_addFrame(self->app, HelpFrame_getFrame(HelpFrame_new(self->app)));
     }
@@ -605,7 +657,7 @@ static void MainFrame_onGraphThemeChange(Input* input, SDL_Event* evt, Select* s
         int* values = ColumnGraph_getValues(self->graph[i], &len);
         ColumnGraph_resetBars(self->graph[i]);
         ColumnGraph_initBars(self->graph[i], len, values, self->graph_style);
-        safe_free((void**)&values);
+        safe_free((void **) &values);
     }
     MainFrame_addElements(self, self->app);
 }

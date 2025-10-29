@@ -52,9 +52,17 @@ static void HelpFrame_addElements(HelpFrame *self, App *app) {
     ListIterator_destroy(it);
     List_clear(self->elements);    TextStyle *text_style = TextStyle_new(
         ResourceManager_getDefaultBoldFont(app->manager, 36),
-        36, COLOR_WHITE, TTF_STYLE_UNDERLINE);
-    Text *title_text = Text_new(app->renderer, text_style, Position_new(0, 0), false, "Help");
+        36, COLOR_WHITE, TTF_STYLE_NORMAL);
+
+    int w, h;
+    SDL_GetWindowSize(self->app->window, &w ,&h);
+    Text *title_text = Text_new(app->renderer, text_style, Position_new(w / 2, 0), true, "Help");
+    Size size_window = Text_getSize(title_text);
+    Text_setPosition(title_text, w/2, size_window.height /2);
     List_push(self->elements, Element_fromText(title_text, NULL));
+
+
+
 }
 
 void HelpFrame_destroy(HelpFrame *self) {

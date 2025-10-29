@@ -246,8 +246,8 @@ int modulo(const int a, const int b) {
     return ((a % b) + b) % b;
 }
 
-int arrayMax(const int* arr, const int len) {
-    int maximum = arr[0];
+int arrayMax(const long* arr, const int len) {
+    long maximum = arr[0];
     for (int i = 1; i < len; i++) {
         if (arr[i] > maximum) {
             maximum = arr[i];
@@ -256,12 +256,55 @@ int arrayMax(const int* arr, const int len) {
     return maximum;
 }
 
-int arrayMin(const int* arr, const int len) {
-    int minimum = arr[0];
+int arrayMin(const long* arr, const int len) {
+    long minimum = arr[0];
     for (int i = 1; i < len; i++) {
         if (arr[i] < minimum) {
             minimum = arr[i];
         }
     }
     return minimum;
+}
+
+char* String_max(const char** arr, int len) {
+    char* maxStr = NULL;
+    for (int i = 0; i < len; i++) {
+        if (i == 0) {
+            maxStr = (char*)arr[i];
+            continue;
+        }
+        if (strlen(arr[i]) > strlen(maxStr)) {
+            maxStr = (char*)arr[i];
+            continue;
+        }
+        if (strlen(arr[i]) == strlen(maxStr) && strcmp(arr[i], maxStr) > 0) {
+            maxStr = (char*)arr[i];
+        }
+    }
+    return maxStr;
+}
+
+char* String_min(const char** arr, int len) {
+    char* minStr = NULL;
+    for (int i = 0; i < len; i++) {
+        if (i == 0) {
+            minStr = (char*)arr[i];
+            continue;
+        }
+        if (strlen(arr[i]) < strlen(minStr)) {
+            minStr = (char*)arr[i];
+            continue;
+        }
+        if (strlen(arr[i]) == strlen(minStr) && strcmp(arr[i], minStr) < 0) {
+            minStr = (char*)arr[i];
+        }
+    }
+    return minStr;
+}
+
+int String_compare(const char* a, const char* b) {
+    if (strlen(a) == strlen(b)) {
+        return strcmp(a, b);
+    }
+    return strlen(a) - strlen(b);
 }

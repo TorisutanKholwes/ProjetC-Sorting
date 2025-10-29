@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(SDLBase C)
+project(ProjectC-Sorting C)
 set(CMAKE_C_STANDARD 23)
 
 set(LIB_INSTALL_DIR "${CMAKE_SOURCE_DIR}/libs")
@@ -73,17 +73,17 @@ file(GLOB SRC_FILES "src/*.c" "src/**/*.c")
 
 message(STATUS "Source files: ${SRC_FILES}")
 
-add_executable(SDLBase ${SRC_FILES} )
+add_executable(ProjectC-Sorting ${SRC_FILES} )
 
-target_include_directories(SDLBase PRIVATE include)
-target_include_directories(SDLBase PRIVATE ${SDL3_INCLUDE_DIRS} ${SDL3_IMAGE_INCLUDE_DIRS} ${SDL3_MIXER_INCLUDE_DIRS} ${SDL3_TTF_INCLUDE_DIRS})
+target_include_directories(ProjectC-Sorting PRIVATE include)
+target_include_directories(ProjectC-Sorting PRIVATE ${SDL3_INCLUDE_DIRS} ${SDL3_IMAGE_INCLUDE_DIRS} ${SDL3_MIXER_INCLUDE_DIRS} ${SDL3_TTF_INCLUDE_DIRS})
 
 if (WIN32)
-    target_link_libraries(SDLBase PRIVATE SDL3::SDL3 SDL3_image::SDL3_image SDL3_mixer::SDL3_mixer SDL3_ttf::SDL3_ttf)
+    target_link_libraries(ProjectC-Sorting PRIVATE SDL3::SDL3 SDL3_image::SDL3_image SDL3_mixer::SDL3_mixer SDL3_ttf::SDL3_ttf)
 else ()
-    target_link_libraries(SDLBase PRIVATE SDL3::SDL3 SDL3_image::SDL3_image SDL3_mixer::SDL3_mixer SDL3_ttf::SDL3_ttf m)
+    target_link_libraries(ProjectC-Sorting PRIVATE SDL3::SDL3 SDL3_image::SDL3_image SDL3_mixer::SDL3_mixer SDL3_ttf::SDL3_ttf m)
 endif ()
 
 if (NOT WIN32)
-    target_compile_options(SDLBase PRIVATE -Wall -Wextra)
+    target_compile_options(ProjectC-Sorting PRIVATE -Wall -Wextra -Werror)
 endif ()

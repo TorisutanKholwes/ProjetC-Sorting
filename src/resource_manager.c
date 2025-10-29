@@ -8,14 +8,13 @@
 #include "utils.h"
 #include "map.h"
 
-ResourceManager* ResourceManager_create(SDL_Renderer* renderer, MIX_Mixer* mixer) {
+ResourceManager* ResourceManager_create(SDL_Renderer* renderer) {
     ResourceManager* self = calloc(1, sizeof(ResourceManager));
     if (!self) {
         error("Failed to allocate ResourceManager");
         return NULL;
     }
     self->renderer = renderer;
-    self->mixer = mixer;
     self->texturesCache = Map_create(true);
     self->fontsCache = Map_create(true);
     self->soundsCache = Map_create(true);
@@ -68,7 +67,7 @@ void ResourceManager_destroy(ResourceManager* self) {
             MapIterator_next(it);
             void* key = MapIterator_key(it);
             void* value = MapIterator_value(it);
-            MIX_DestroyAudio((MIX_Audio*)value);
+            Mix_FreeChunk((Mix_Chunk*)value);
             safe_free(&key);
         }
         MapIterator_destroy(it);
@@ -130,7 +129,7 @@ TTF_Font* ResourceManager_getFont(ResourceManager* self, const char* filename, i
     return font;
 }
 
-MIX_Audio* ResourceManager_getSound(ResourceManager* self, const char* filename) {
+Mix_Chunk* ResourceManager_getSound(ResourceManager* self, const char* filename) {
     if (!self || !self->soundsCache || !filename) return NULL;
 
     if (Map_containsKey(self->soundsCache, (void*)filename)) {
@@ -139,7 +138,7 @@ MIX_Audio* ResourceManager_getSound(ResourceManager* self, const char* filename)
 
     char* path = malloc(strlen(SOUND_PATH) + strlen(filename) + 1);
     sprintf(path, "%s%s", SOUND_PATH, filename);
-    MIX_Audio* sound = MIX_LoadAudio(self->mixer, path, true);
+    Mix_Chunk* sound = Mix_LoadWAV(path);
     if (!sound) {
         error("Failed to load sound %s", path);
         safe_free((void**)&path);

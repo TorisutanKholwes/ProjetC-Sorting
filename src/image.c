@@ -16,9 +16,9 @@ Image* Image_new(SDL_Texture* texture, Position* position, bool from_center) {
         return NULL;
     }
     self->texture = texture;
-    float w, h;
-    SDL_GetTextureSize(texture, &w, &h);
-    SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_LINEAR);
+    int w, h;
+    SDL_QueryTexture(texture, NULL, NULL, &w, &h);
+    SDL_SetTextureScaleMode(texture, SDL_ScaleModeBest);
     self->size.width = w;
     self->size.height = h;
     self->position = position;
@@ -46,9 +46,9 @@ Image* Image_load(App* app, const char* path, Position* position, bool from_cent
         return NULL;
     }
     self->texture = texture;
-    float w, h;
-    SDL_GetTextureSize(texture, &w, &h);
-    SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_LINEAR);
+    int w, h;
+    SDL_QueryTexture(texture, NULL, NULL, &w, &h);
+    SDL_SetTextureScaleMode(texture, SDL_ScaleModeBest);
     self->size.width = w;
     self->size.height = h;
     return self;
@@ -84,9 +84,7 @@ void Image_render(Image* self, SDL_Renderer* renderer) {
     }
 
     SDL_FRect dst = { x, y, width, height };
-    if (!SDL_RenderTexture(renderer, self->texture, NULL, &dst)) {
-        error("Failed to render image texture : %s", SDL_GetError());
-    }
+    SDL_RenderCopyF(renderer, self->texture, NULL, &dst);
 }
 
 void Image_setSize(Image* self, float width, float height) {
@@ -121,9 +119,9 @@ void Image_setRatio(Image* self, float ratio) {
 
 void Image_setTexture(Image* self, SDL_Texture* texture) {
     self->texture = texture;
-    float w, h;
-    SDL_GetTextureSize(texture, &w, &h);
-    SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_LINEAR);
+    int w, h;
+    SDL_QueryTexture(texture, NULL, NULL, &w, &h);
+    SDL_SetTextureScaleMode(texture, SDL_ScaleModeBest);
     self->size.width = w;
     self->size.height = h;
 }

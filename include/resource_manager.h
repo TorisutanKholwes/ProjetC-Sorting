@@ -17,17 +17,16 @@
 
 struct ResourceManager {
     SDL_Renderer* renderer;
-    MIX_Mixer* mixer;
     Map* texturesCache;
     Map* fontsCache;
     Map* soundsCache;
 };
 
-ResourceManager* ResourceManager_create(SDL_Renderer* renderer, MIX_Mixer* mixer);
+ResourceManager* ResourceManager_create(SDL_Renderer* renderer);
 void ResourceManager_destroy(ResourceManager* self);
 SDL_Texture* ResourceManager_getTexture(ResourceManager* self, const char* filename);
 TTF_Font* ResourceManager_getFont(ResourceManager* self, const char* filename, int size);
-MIX_Audio* ResourceManager_getSound(ResourceManager* self, const char* filename);
+Mix_Chunk* ResourceManager_getSound(ResourceManager* self, const char* filename);
 
 TTF_Font* ResourceManager_getDefaultFont(ResourceManager* self, int size);
 TTF_Font* ResourceManager_getDefaultBoldFont(ResourceManager* self, int size);

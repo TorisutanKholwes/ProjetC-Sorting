@@ -31,7 +31,7 @@ int main() {
     flags |= SDL_WINDOW_FULLSCREEN;
 #endif
 
-    SDL_Window* window = SDL_CreateWindow(WINDOW_TITLE,
+    SDL_Window* window = SDL_CreateWindow(WINDOW_TITLE, 0, 0,
         WINDOW_WIDTH, WINDOW_HEIGHT, flags);
 
     if (!window) {
@@ -40,30 +40,15 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    SDL_Renderer *renderer = SDL_CreateRenderer(window, NULL);
+    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!renderer) {
         error("Unable to create renderer: %s", SDL_GetError());
         SDL_Quit();
         exit(EXIT_FAILURE);
     }
 
-    SDL_AudioDeviceID audioDevice = SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, NULL);
-    if (!audioDevice) {
-        error("Unable to open audio device: %s", SDL_GetError());
-        SDL_Quit();
-        exit(EXIT_FAILURE);
-    }
-
-    SDL_AudioSpec audioSpec;
-    if (!SDL_GetAudioDeviceFormat(audioDevice, &audioSpec, NULL)) {
-        error("Unable to get audio format: %s", SDL_GetError());
-        SDL_CloseAudioDevice(audioDevice);
-        SDL_Quit();
-        exit(EXIT_FAILURE);
-    }
-
     log_message(LOG_LEVEL_INFO, "Successfully initialized SDL, Window and Renderer. Start looping app...");
-    App* app = App_create(window, renderer, &audioSpec);
+    App* app = App_create(window, renderer);
 
     if (!app) {
         exit(EXIT_FAILURE);
@@ -121,8 +106,6 @@ int main() {
         Frame* frame = List_popLast(app->stack);
         Frame_destroy(frame);
     }
-
-    SDL_CloseAudioDevice(audioDevice);
 
     // Need to be destroyed before App_quit because it uses SDL3 functions
     ResourceManager_destroy(app->manager);

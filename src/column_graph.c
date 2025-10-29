@@ -33,7 +33,7 @@ ColumnGraph* ColumnGraph_new(float width, float height, Position* position, Inpu
     graph->offHover = offHover;
     FlexContainer_setAlignItems(graph->container, NO_FLEX_ALIGN);
 
-    Input_addEventHandler(input, SDL_EVENT_MOUSE_MOTION, (EventHandlerFunc) ColumnGraph_handleMouseMotion, graph);
+    Input_addEventHandler(input, SDL_MOUSEMOTION, (EventHandlerFunc) ColumnGraph_handleMouseMotion, graph);
     return graph;
 }
 
@@ -44,7 +44,7 @@ void ColumnGraph_destroy(ColumnGraph* graph) {
         ColumnGraphBar* bar = (ColumnGraphBar*)ListIterator_next(it);
         ColumnGraphBar_destroy(bar);
     }
-    Input_removeOneEventHandler(graph->input, SDL_EVENT_MOUSE_MOTION, graph);
+    Input_removeOneEventHandler(graph->input, SDL_MOUSEMOTION, graph);
     ListIterator_destroy(it);
     List_destroy(graph->bars);
     FlexContainer_destroy(graph->container);

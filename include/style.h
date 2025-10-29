@@ -21,10 +21,10 @@ struct TextStyle {
     TTF_Font* font;
     int size;
     Color* color;
-    TTF_FontStyleFlags style;
+    int style;
 };
 
-TextStyle* TextStyle_new(TTF_Font* font, int size, Color* color, TTF_FontStyleFlags style);
+TextStyle* TextStyle_new(TTF_Font* font, int size, Color* color, int style);
 void TextStyle_destroy(TextStyle* style);
 TextStyle* TextStyle_default(ResourceManager* resource_manager);
 TextStyle* TextStyle_defaultFromTheme(Theme* theme, ResourceManager* resource_manager);
@@ -42,12 +42,12 @@ struct ButtonStyle {
     FullStyleColors* colors;
     int border_width;
     TTF_Font* text_font;
-    TTF_FontStyleFlags text_style;
+    int text_style;
     int text_size;
     EdgeInsets* paddings;
 };
 
-ButtonStyle* ButtonStyle_new(FullStyleColors* colors, int border_width, TTF_Font* text_font, TTF_FontStyleFlags text_style, int text_size, EdgeInsets* paddings);
+ButtonStyle* ButtonStyle_new(FullStyleColors* colors, int border_width, TTF_Font* text_font, int text_style, int text_size, EdgeInsets* paddings);
 void ButtonStyle_destroy(ButtonStyle* style);
 ButtonStyle* ButtonStyle_default(ResourceManager* resource_manager);
 ButtonStyle* ButtonStyle_defaultFromTheme(Theme* theme, ResourceManager* resource_manager);
@@ -59,12 +59,12 @@ ButtonStyle* SelectStyle_defaultFromTheme(Theme* theme, ResourceManager* resourc
 struct InputBoxStyle {
     TTF_Font* font;
     int text_size;
-    TTF_FontStyleFlags style;
+    int style;
 
     FullStyleColors* colors;
 };
 
-InputBoxStyle* InputBoxStyle_new(TTF_Font* font, int text_size, TTF_FontStyleFlags style, FullStyleColors* colors);
+InputBoxStyle* InputBoxStyle_new(TTF_Font* font, int text_size, int style, FullStyleColors* colors);
 void InputBoxStyle_destroy(InputBoxStyle* style);
 InputBoxStyle* InputBoxStyle_default(ResourceManager* resource_manager);
 InputBoxStyle* InputBoxStyle_defaultFromTheme(Theme* theme, ResourceManager* resource_manager);

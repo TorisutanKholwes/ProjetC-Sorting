@@ -240,17 +240,17 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
 void MainFrame_destroy(MainFrame* self) {
     if (!self) return;
 
-    Input_removeOneKeyEventHandler(self->app->input, SDLK_ESCAPE, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDLK_S, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDLK_P, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDLK_M, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDLK_Q, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDLK_RETURN, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDLK_A, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_ESCAPE, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_S, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_P, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_M, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_Q, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_RETURN, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_A, self);
 
-    Input_removeOneEventHandler(self->app->input, SDL_EVENT_MOUSE_BUTTON_DOWN, self);
-    Input_removeOneEventHandler(self->app->input, SDL_EVENT_MOUSE_MOTION, self);
-    Input_removeOneEventHandler(self->app->input, SDL_EVENT_WINDOW_RESIZED, self);
+    Input_removeOneEventHandler(self->app->input, SDL_MOUSEBUTTONDOWN, self);
+    Input_removeOneEventHandler(self->app->input, SDL_MOUSEMOTION, self);
+    Input_removeOneEventHandler(self->app->input, SDL_WINDOWEVENT_RESIZED, self);
 
     Element_destroyList(self->elements);
 
@@ -294,33 +294,33 @@ void MainFrame_update(MainFrame* self) {
 void MainFrame_focus(MainFrame* self) {
     Element_focusList(self->elements);
 
-    Input_addKeyEventHandler(self->app->input, SDLK_ESCAPE, (EventHandlerFunc) MainFrame_onEscape, self);
-    Input_addKeyEventHandler(self->app->input, SDLK_S, (EventHandlerFunc) MainFrame_onRuneS, self);
-    Input_addKeyEventHandler(self->app->input, SDLK_P, (EventHandlerFunc) MainFrame_onRuneP, self);
-    Input_addKeyEventHandler(self->app->input, SDLK_M, (EventHandlerFunc) MainFrame_onRuneM, self);
-    Input_addKeyEventHandler(self->app->input, SDLK_Q, (EventHandlerFunc) MainFrame_onRuneQ, self);
-    Input_addKeyEventHandler(self->app->input, SDLK_RETURN, (EventHandlerFunc) MainFrame_onEnter, self);
-    Input_addKeyEventHandler(self->app->input, SDLK_A, (EventHandlerFunc) MainFrame_onRuneA, self);
+    Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_ESCAPE, (EventHandlerFunc) MainFrame_onEscape, self);
+    Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_S, (EventHandlerFunc) MainFrame_onRuneS, self);
+    Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_P, (EventHandlerFunc) MainFrame_onRuneP, self);
+    Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_M, (EventHandlerFunc) MainFrame_onRuneM, self);
+    Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_Q, (EventHandlerFunc) MainFrame_onRuneQ, self);
+    Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_RETURN, (EventHandlerFunc) MainFrame_onEnter, self);
+    Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_A, (EventHandlerFunc) MainFrame_onRuneA, self);
 
-    Input_addEventHandler(self->app->input, SDL_EVENT_MOUSE_BUTTON_DOWN, (EventHandlerFunc) MainFrame_onClick, self);
-    Input_addEventHandler(self->app->input, SDL_EVENT_MOUSE_MOTION, (EventHandlerFunc) MainFrame_onMouseMove, self);
-    Input_addEventHandler(self->app->input, SDL_EVENT_WINDOW_RESIZED, (EventHandlerFunc) MainFrame_onWindowResize, self);
+    Input_addEventHandler(self->app->input, SDL_MOUSEBUTTONDOWN, (EventHandlerFunc) MainFrame_onClick, self);
+    Input_addEventHandler(self->app->input, SDL_MOUSEMOTION, (EventHandlerFunc) MainFrame_onMouseMove, self);
+    Input_addEventHandler(self->app->input, SDL_WINDOWEVENT_RESIZED, (EventHandlerFunc) MainFrame_onWindowResize, self);
 }
 
 void MainFrame_unfocus(MainFrame* self) {
     Element_unfocusList(self->elements);
 
-    Input_removeOneKeyEventHandler(self->app->input, SDLK_ESCAPE, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDLK_S, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDLK_P, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDLK_M, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDLK_Q, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDLK_RETURN, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDLK_A, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_ESCAPE, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_S, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_P, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_M, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_Q, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_RETURN, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_A, self);
 
-    Input_removeOneEventHandler(self->app->input, SDL_EVENT_MOUSE_BUTTON_DOWN, self);
-    Input_removeOneEventHandler(self->app->input, SDL_EVENT_MOUSE_MOTION, self);
-    Input_removeOneEventHandler(self->app->input, SDL_EVENT_WINDOW_RESIZED, self);
+    Input_removeOneEventHandler(self->app->input, SDL_MOUSEBUTTONDOWN, self);
+    Input_removeOneEventHandler(self->app->input, SDL_MOUSEMOTION, self);
+    Input_removeOneEventHandler(self->app->input, SDL_WINDOWEVENT_RESIZED, self);
 }
 
 Frame* MainFrame_getFrame(MainFrame* self) {
@@ -633,8 +633,11 @@ static void MainFrame_loadFile(Input* input, SDL_Event* evt, Button* button) {
         Container* parent = button->parent;
         if (parent->parent) {
             MainFrame* mainFrame = parent->parent;
-            const SDL_DialogFileFilter filters[] = {{"Text File", "txt"}};
-            SDL_ShowOpenFileDialog(MainFrame_loadFileCallback, mainFrame, mainFrame->app->window, filters, 1, NULL, 0);
+            UNUSED(mainFrame);
+            log_message(LOG_LEVEL_WARN, "Need to reimplement file dialog because not working for SDL2");
+            /*const SDL_DialogFileFilter filters[] = {{"Text File", "txt"}};
+            SDL_ShowOpenFileDialog(MainFrame_loadFileCallback, mainFrame, mainFrame->app->window, filters, 1, NULL, 0);*/
+            MainFrame_loadFileCallback(NULL, NULL, 0);
         }
     }
 }

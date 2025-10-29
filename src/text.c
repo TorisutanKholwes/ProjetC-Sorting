@@ -122,7 +122,7 @@ void refreshTexture(Text* self) {
     }
     TTF_SetFontStyle(self->style->font, self->style->style);
 
-    SDL_Surface *surface = TTF_RenderText_Blended(self->style->font, text, strlen(text), Color_toSDLColor(self->style->color));
+    SDL_Surface *surface = TTF_RenderText_Blended(self->style->font, text, Color_toSDLColor(self->style->color));
     if (!surface) {
         error("Failed to create text surface.");
         return;
@@ -131,19 +131,19 @@ void refreshTexture(Text* self) {
     self->texture = SDL_CreateTextureFromSurface(self->renderer, surface);
 
     if (!self->custom_size) {
-        float w, h;
-        SDL_GetTextureSize(self->texture, &w, &h);
+        int w, h;
+        SDL_QueryTexture(self->texture, NULL, NULL, &w, &h);
         self->size.width = w;
         self->size.height = h;
     }
 
     if (!self->texture) {
         error("Failed to create text texture.");
-        SDL_DestroySurface(surface);
+        SDL_FreeSurface(surface);
         return;
     }
 
-    SDL_DestroySurface(surface);
+    SDL_FreeSurface(surface);
 }
 
 void Text_render(Text* self) {
@@ -163,9 +163,7 @@ void Text_render(Text* self) {
     }
 
     SDL_FRect dst = { x, y, self->size.width, self->size.height };
-    if (!SDL_RenderTexture(self->renderer, self->texture, NULL, &dst)) {
-        error("Failed to render text texture : %s", SDL_GetError());
-    }
+    SDL_RenderCopyF(self->renderer, self->texture, NULL, &dst);
 }
 
 Size Text_getSize(Text* self) {

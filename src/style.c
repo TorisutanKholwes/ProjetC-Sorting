@@ -27,7 +27,7 @@ void EdgeInsets_destroy(EdgeInsets* insets) {
     safe_free((void**)&insets);
 }
 
-TextStyle* TextStyle_new(TTF_Font* font, int size, Color* color, TTF_FontStyleFlags style) {
+TextStyle* TextStyle_new(TTF_Font* font, int size, Color* color, int style) {
     TextStyle* text_style = calloc(1, sizeof(TextStyle));
     if (!text_style) {
         error("Failed to allocate memory for TextStyle");
@@ -98,7 +98,7 @@ void FullStyleColors_destroy(FullStyleColors* colors) {
     safe_free((void**)&colors);
 }
 
-ButtonStyle* ButtonStyle_new(FullStyleColors* colors, int border_width, TTF_Font* text_font, TTF_FontStyleFlags text_style, int text_size, EdgeInsets* paddings) {
+ButtonStyle* ButtonStyle_new(FullStyleColors* colors, int border_width, TTF_Font* text_font, int text_style, int text_size, EdgeInsets* paddings) {
     ButtonStyle* style = calloc(1, sizeof(ButtonStyle));
     if (!style) {
         error("Failed to allocate memory for ButtonStyle");
@@ -209,7 +209,7 @@ ButtonStyle* SelectStyle_defaultFromTheme(Theme* theme, ResourceManager* resourc
     return style;
 }
 
-InputBoxStyle* InputBoxStyle_new(TTF_Font* font, int text_size, TTF_FontStyleFlags style, FullStyleColors* colors) {
+InputBoxStyle* InputBoxStyle_new(TTF_Font* font, int text_size, int style, FullStyleColors* colors) {
     InputBoxStyle* self = calloc(1, sizeof(InputBoxStyle));
     if (!self) {
         error("Failed to allocate memory for InputBoxStyle");

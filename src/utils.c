@@ -40,17 +40,22 @@ void safe_free(void** ptr) {
 int init() {
     Uint32 sdlFlags = SDL_INIT_VIDEO | SDL_INIT_AUDIO;
 
-    if (!SDL_Init(sdlFlags)) {
+    if (SDL_Init(sdlFlags) < 0) {
         error("Unable to initialize SDL: %s", SDL_GetError());
         return EXIT_FAILURE;
     }
 
-    if (!TTF_Init()) {
+    if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG) {
+        error("Unable to initialize SDL_image: %s", SDL_GetError());
+        return EXIT_FAILURE;
+    }
+
+    if (TTF_Init() == -1) {
         error("Unable to initialize SDL_ttf: %s", SDL_GetError());
         return EXIT_FAILURE;
     }
 
-    if (!MIX_Init()) {
+    if (Mix_Init(MIX_INIT_WAVPACK) < 0) {
         error("Unable to initialize SDL_mixer: %s", SDL_GetError());
         return EXIT_FAILURE;
     }
@@ -79,10 +84,10 @@ void SDL_RenderStroke(SDL_Renderer* renderer, const SDL_FRect* rect, const float
     const SDL_FRect left = { rect->x, rect->y, thickness, rect->h };
     const SDL_FRect right = { rect->x + rect->w - thickness, rect->y, thickness, rect->h };
 
-    SDL_RenderFillRect(renderer, &top);
-    SDL_RenderFillRect(renderer, &bottom);
-    SDL_RenderFillRect(renderer, &left);
-    SDL_RenderFillRect(renderer, &right);
+    SDL_RenderFillRectF(renderer, &top);
+    SDL_RenderFillRectF(renderer, &bottom);
+    SDL_RenderFillRectF(renderer, &left);
+    SDL_RenderFillRectF(renderer, &right);
 }
 
 Color* Color_rgb(const int r, const int g, const int b) {

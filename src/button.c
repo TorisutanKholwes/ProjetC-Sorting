@@ -78,9 +78,9 @@ Button* Button_newf(const App* app, Position* position, bool from_center, Button
 
 void Button_destroy(Button* button) {
     if (!button) return;
-    Input_removeOneEventHandler(button->input, SDL_EVENT_MOUSE_MOTION, button);
-    Input_removeOneEventHandler(button->input, SDL_EVENT_MOUSE_BUTTON_DOWN, button);
-    Input_removeOneEventHandler(button->input, SDL_EVENT_MOUSE_BUTTON_UP, button);
+    Input_removeOneEventHandler(button->input, SDL_MOUSEMOTION, button);
+    Input_removeOneEventHandler(button->input, SDL_MOUSEBUTTONDOWN, button);
+    Input_removeOneEventHandler(button->input, SDL_MOUSEBUTTONUP, button);
 
     Text_destroy(button->text);
     ButtonStyle_destroy(button->style);
@@ -105,7 +105,7 @@ void Button_render(Button* button, SDL_Renderer* renderer) {
         } else {
             borderRect = (SDL_FRect) { button->rect.x, button->rect.y, button->rect.w + (borderWidth * 2)+ (paddings->right + paddings->left), button->rect.h + (borderWidth * 2) + (paddings->bottom + paddings->top)};
         }
-        SDL_RenderFillRect(renderer, &borderRect);
+        SDL_RenderFillRectF(renderer, &borderRect);
     } else {
         if (borderWidth > 0) {
             float bx, by, bw, bh;
@@ -126,10 +126,10 @@ void Button_render(Button* button, SDL_Renderer* renderer) {
             SDL_FRect left   = { bx, by, (float)borderWidth, bh };
             SDL_FRect right  = { bx + bw - borderWidth, by, (float)borderWidth, bh };
 
-            SDL_RenderFillRect(renderer, &top);
-            SDL_RenderFillRect(renderer, &bottom);
-            SDL_RenderFillRect(renderer, &left);
-            SDL_RenderFillRect(renderer, &right);
+            SDL_RenderFillRectF(renderer, &top);
+            SDL_RenderFillRectF(renderer, &bottom);
+            SDL_RenderFillRectF(renderer, &left);
+            SDL_RenderFillRectF(renderer, &right);
         }
     }
 
@@ -140,7 +140,7 @@ void Button_render(Button* button, SDL_Renderer* renderer) {
     } else {
         fillRect = (SDL_FRect) { button->rect.x + borderWidth, button->rect.y + borderWidth, button->rect.w + (paddings->right + paddings->left),  button->rect.h + (paddings->bottom + paddings->top)};
     }
-    SDL_RenderFillRect(renderer, &fillRect);
+    SDL_RenderFillRectF(renderer, &fillRect);
 
     const float textX = fillRect.x + (fillRect.w / 2) - (Text_getSize(button->text).width / 2);
     const float textY = fillRect.y + (fillRect.h / 2) - (Text_getSize(button->text).height / 2);
@@ -157,17 +157,17 @@ void Button_update(Button* button) {
 void Button_unFocus(Button* button) {
     //log_message(LOG_LEVEL_DEBUG, "Button %s unfocused", button->text->text);
     button->focused = false;
-    Input_removeOneEventHandler(button->input, SDL_EVENT_MOUSE_MOTION, button);
-    Input_removeOneEventHandler(button->input, SDL_EVENT_MOUSE_BUTTON_DOWN, button);
-    Input_removeOneEventHandler(button->input, SDL_EVENT_MOUSE_BUTTON_UP, button);
+    Input_removeOneEventHandler(button->input, SDL_MOUSEMOTION, button);
+    Input_removeOneEventHandler(button->input, SDL_MOUSEBUTTONDOWN, button);
+    Input_removeOneEventHandler(button->input, SDL_MOUSEBUTTONUP, button);
 }
 
 void Button_focus(Button* button) {
     //log_message(LOG_LEVEL_DEBUG, "Button %s focused", button->text->text);
     button->focused = true;
-    Input_addEventHandler(button->input, SDL_EVENT_MOUSE_MOTION, Button_checkHover, button);
-    Input_addEventHandler(button->input, SDL_EVENT_MOUSE_BUTTON_DOWN, Button_checkPressed, button);
-    Input_addEventHandler(button->input, SDL_EVENT_MOUSE_BUTTON_UP, Button_checkPressed, button);
+    Input_addEventHandler(button->input, SDL_MOUSEMOTION, Button_checkHover, button);
+    Input_addEventHandler(button->input, SDL_MOUSEBUTTONDOWN, Button_checkPressed, button);
+    Input_addEventHandler(button->input, SDL_MOUSEBUTTONUP, Button_checkPressed, button);
 }
 
 void Button_setString(Button* button, const char* str) {
@@ -248,12 +248,12 @@ static void Button_checkPressed(Input* input, SDL_Event* evt, void* buttonData) 
         fullRect = (SDL_FRect) { button->rect.x, button->rect.y, button->rect.w + (paddings->right + paddings->left),  button->rect.h + (paddings->bottom + paddings->top)};
     }
     bool isHovering = Input_mouseInRect(input, fullRect);
-    if (isHovering && evt->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+    if (isHovering && evt->type == SDL_MOUSEBUTTONDOWN) {
         button->pressed = true;
         if (button->onClick) {
             button->onClick(input, evt, buttonData);
         }
-    } else if (isHovering && evt->type == SDL_EVENT_MOUSE_BUTTON_UP) {
+    } else if (isHovering && evt->type == SDL_MOUSEBUTTONUP) {
         button->pressed = false;
     } else {
         button->pressed = false;

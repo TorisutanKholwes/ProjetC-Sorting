@@ -40,7 +40,7 @@ Select* Select_new(const App* app, Position* position, bool from_center, ButtonS
 void Select_destroy(Select* select) {
     if (!select) return;
 
-    Input_removeOneEventHandler(select->input, SDL_EVENT_MOUSE_BUTTON_DOWN, select);
+    Input_removeOneEventHandler(select->input, SDL_MOUSEBUTTONDOWN, select);
 
     Text_destroy(select->text);
     ButtonStyle_destroy(select->style);
@@ -64,7 +64,7 @@ void Select_render(Select* select, SDL_Renderer* renderer) {
         } else {
             borderRect = (SDL_FRect) { select->rect.x, select->rect.y, select->rect.w + (borderWidth * 2)+ (paddings->right + paddings->left), select->rect.h + (borderWidth * 2) + (paddings->bottom + paddings->top)};
         }
-        SDL_RenderFillRect(renderer, &borderRect);
+        SDL_RenderFillRectF(renderer, &borderRect);
     } else {
         if (borderWidth > 0) {
             float bx, by, bw, bh;
@@ -85,10 +85,10 @@ void Select_render(Select* select, SDL_Renderer* renderer) {
             SDL_FRect left   = { bx, by, (float)borderWidth, bh };
             SDL_FRect right  = { bx + bw - borderWidth, by, (float)borderWidth, bh };
 
-            SDL_RenderFillRect(renderer, &top);
-            SDL_RenderFillRect(renderer, &bottom);
-            SDL_RenderFillRect(renderer, &left);
-            SDL_RenderFillRect(renderer, &right);
+            SDL_RenderFillRectF(renderer, &top);
+            SDL_RenderFillRectF(renderer, &bottom);
+            SDL_RenderFillRectF(renderer, &left);
+            SDL_RenderFillRectF(renderer, &right);
         }
     }
 
@@ -99,7 +99,7 @@ void Select_render(Select* select, SDL_Renderer* renderer) {
     } else {
         fillRect = (SDL_FRect) { select->rect.x + borderWidth, select->rect.y + borderWidth, select->rect.w + (paddings->right + paddings->left),  select->rect.h + (paddings->bottom + paddings->top)};
     }
-    SDL_RenderFillRect(renderer, &fillRect);
+    SDL_RenderFillRectF(renderer, &fillRect);
 
     const float textX = fillRect.x + (fillRect.w / 2) - (Text_getSize(select->text).width / 2);
     const float textY = fillRect.y + (fillRect.h / 2) - (Text_getSize(select->text).height / 2);
@@ -120,14 +120,14 @@ void Select_focus(Select* select) {
     if (!select) return;
     select->focused = true;
 
-    Input_addEventHandler(select->input, SDL_EVENT_MOUSE_BUTTON_DOWN, (EventHandlerFunc) Select_checkPressed, select);
+    Input_addEventHandler(select->input, SDL_MOUSEBUTTONDOWN, (EventHandlerFunc) Select_checkPressed, select);
 }
 
 void Select_unFocus(Select* select) {
     if (!select) return;
     select->focused = false;
 
-    Input_removeOneEventHandler(select->input, SDL_EVENT_MOUSE_BUTTON_DOWN, select);
+    Input_removeOneEventHandler(select->input, SDL_MOUSEBUTTONDOWN, select);
 }
 
 void Select_setPosition(Select* select, float x, float y) {

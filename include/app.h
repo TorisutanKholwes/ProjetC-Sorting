@@ -10,7 +10,6 @@
 struct App {
     SDL_Window* window;
     SDL_Renderer* renderer;
-    MIX_Mixer* mixer;
     Input* input;
     List* stack;
     Theme* theme;
@@ -20,7 +19,7 @@ struct App {
     bool frameChanged;
 };
 
-App* App_create(SDL_Window* window, SDL_Renderer* renderer, SDL_AudioSpec *audioSpec);
+App* App_create(SDL_Window* window, SDL_Renderer* renderer);
 void App_destroy(App* app);
 void App_quit(const App *app);
 void App_addFrame(App* app, Frame* frame);

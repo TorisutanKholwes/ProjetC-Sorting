@@ -108,12 +108,12 @@ void Input_update(Input *input) {
             ListIterator_destroy(it);
         }
         switch (evt.type) {
-            case SDL_EVENT_QUIT:
+            case SDL_QUIT:
                 input->quit = true;
                 break;
-            case SDL_EVENT_KEY_DOWN:
-                if (input->keyEventHandlers && Map_containsKey(input->keyEventHandlers, (void *) (unsigned long) evt.key.key)) {
-                    List *handlers = Map_get(input->keyEventHandlers, (void *) (unsigned long) evt.key.key);
+            case SDL_KEYDOWN:
+                if (input->keyEventHandlers && Map_containsKey(input->keyEventHandlers, (void *) (unsigned long) evt.key.keysym.scancode)) {
+                    List *handlers = Map_get(input->keyEventHandlers, (void *) (unsigned long) evt.key.keysym.scancode);
                     ListIterator *it = ListIterator_new(handlers);
                     while (ListIterator_hasNext(it)) {
                         if (it->size != List_size(handlers)) {
@@ -126,42 +126,42 @@ void Input_update(Input *input) {
                     }
                     ListIterator_destroy(it);
                 }
-                code = evt.key.key;
+                code = evt.key.keysym.scancode;
                 input->lastPressed = code;
                 List_push(input->keysDown, (void *) code);
-                if (code == SDLK_LSHIFT || code == SDLK_RSHIFT) {
+                if (code == SDL_SCANCODE_LSHIFT || code == SDL_SCANCODE_RSHIFT) {
                     input->shift = true;
-                } else if (code == SDLK_LCTRL || code == SDLK_RCTRL) {
+                } else if (code == SDL_SCANCODE_LCTRL || code == SDL_SCANCODE_RCTRL) {
                     input->ctrl = true;
-                } else if (code == SDLK_LALT || code == SDLK_RALT) {
+                } else if (code == SDL_SCANCODE_LALT || code == SDL_SCANCODE_RALT) {
                     input->alt = true;
                 }
-                if (code == SDLK_ESCAPE) {
+                if (code == SDL_SCANCODE_ESCAPE) {
                     input->esc = true;
                 }
                 break;
-            case SDL_EVENT_KEY_UP:
-                code = evt.key.key;
+            case SDL_KEYUP:
+                code = evt.key.keysym.scancode;
                 List_remove(input->keysDown, (void *) code);
-                if (code == SDLK_LSHIFT || code == SDLK_RSHIFT) {
+                if (code == SDL_SCANCODE_LSHIFT || code == SDL_SCANCODE_RSHIFT) {
                     input->shift = false;
-                } else if (code == SDLK_LCTRL || code == SDLK_RCTRL) {
+                } else if (code == SDL_SCANCODE_LCTRL || code == SDL_SCANCODE_RCTRL) {
                     input->ctrl = false;
-                } else if (code == SDLK_LALT || code == SDLK_RALT) {
+                } else if (code == SDL_SCANCODE_LALT || code == SDL_SCANCODE_RALT) {
                     input->alt = false;
                 }
-                if (code == SDLK_ESCAPE) {
+                if (code == SDL_SCANCODE_ESCAPE) {
                     input->esc = false;
                 }
                 break;
-            case SDL_EVENT_MOUSE_BUTTON_DOWN:
+            case SDL_MOUSEBUTTONDOWN:
                 if (evt.button.button == SDL_BUTTON_LEFT) {
                     input->mouse_left = true;
                 } else if (evt.button.button == SDL_BUTTON_RIGHT) {
                     input->mouse_right = true;
                 }
                 break;
-            case SDL_EVENT_MOUSE_MOTION:
+            case SDL_MOUSEMOTION:
                 if (input->mousePos) {
                     Position_destroy(input->mousePos);
                 }

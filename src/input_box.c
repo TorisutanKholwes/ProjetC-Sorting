@@ -44,11 +44,11 @@ void InputBox_destroy(InputBox *self) {
     if (!self) return;
 
     Timer_stop(self->timer);
-    Input_removeOneEventHandler(self->input, SDL_EVENT_TEXT_INPUT, self);
-    Input_removeOneEventHandler(self->input, SDL_EVENT_KEY_DOWN, self);
-    Input_removeOneEventHandler(self->input, SDL_EVENT_MOUSE_BUTTON_DOWN, self);
+    Input_removeOneEventHandler(self->input, SDL_TEXTINPUT, self);
+    Input_removeOneEventHandler(self->input, SDL_KEYDOWN, self);
+    Input_removeOneEventHandler(self->input, SDL_MOUSEBUTTONDOWN, self);
     if (self->selected) {
-        SDL_StopTextInput(self->app->window);
+        SDL_StopTextInput();
     }
 
     Text_destroy(self->text);
@@ -67,10 +67,10 @@ void InputBox_render(InputBox *self, SDL_Renderer *renderer) {
     SDL_SetRenderDrawColor(renderer, border->r, border->g, border->b, border->a);
 
     SDL_FRect borderRect = {self->rect.x - 2, self->rect.y - 2, self->rect.w + 4, self->rect.h + 4};
-    SDL_RenderFillRect(renderer, &borderRect);
+    SDL_RenderFillRectF(renderer, &borderRect);
 
     SDL_SetRenderDrawColor(renderer, fill->r, fill->g, fill->b, fill->a);
-    SDL_RenderFillRect(renderer, &self->rect);
+    SDL_RenderFillRectF(renderer, &self->rect);
 
     const float textX = self->rect.x + 5;
     const float textY = self->rect.y + (self->rect.h / 2) - (Text_getSize(self->text).height / 2);
@@ -117,19 +117,19 @@ void InputBox_setParent(InputBox *self, void *parent) {
 void InputBox_focus(InputBox *self) {
     self->focused = true;
     Timer_start(self->timer);
-    Input_addEventHandler(self->input, SDL_EVENT_TEXT_INPUT, InputBox_checkKeyDown, self);
-    Input_addEventHandler(self->input, SDL_EVENT_KEY_DOWN, InputBox_checkKeyDown, self);
-    Input_addEventHandler(self->input, SDL_EVENT_MOUSE_BUTTON_DOWN, InputBox_checkMouseClick, self);
+    Input_addEventHandler(self->input, SDL_TEXTINPUT, InputBox_checkKeyDown, self);
+    Input_addEventHandler(self->input, SDL_KEYDOWN, InputBox_checkKeyDown, self);
+    Input_addEventHandler(self->input, SDL_MOUSEBUTTONDOWN, InputBox_checkMouseClick, self);
 }
 
 void InputBox_unFocus(InputBox *self) {
     self->focused = false;
     Timer_stop(self->timer);
-    Input_removeOneEventHandler(self->input, SDL_EVENT_TEXT_INPUT, self);
-    Input_removeOneEventHandler(self->input, SDL_EVENT_KEY_DOWN, self);
-    Input_removeOneEventHandler(self->input, SDL_EVENT_MOUSE_BUTTON_DOWN, self);
+    Input_removeOneEventHandler(self->input, SDL_TEXTINPUT, self);
+    Input_removeOneEventHandler(self->input, SDL_KEYDOWN, self);
+    Input_removeOneEventHandler(self->input, SDL_MOUSEBUTTONDOWN, self);
     if (self->selected) {
-        SDL_StopTextInput(self->app->window);
+        SDL_StopTextInput();
     }
 }
 
@@ -184,11 +184,11 @@ static void InputBox_checkMouseClick(Input* input, SDL_Event* event, void* data)
     if (Input_mouseInRect(input, self->rect)) {
         //log_message(LOG_LEVEL_DEBUG, "Input now selected");
         self->selected = true;
-        SDL_StartTextInput(self->app->window);
+        SDL_StartTextInput();
     } else if (self->selected) {
         //log_message(LOG_LEVEL_DEBUG, "Input now unselected");
         self->selected = false;
-        SDL_StopTextInput(self->app->window);
+        SDL_StopTextInput();
     }
 }
 
@@ -199,9 +199,9 @@ static void InputBox_checkKeyDown(Input* input, SDL_Event* event, void* data) {
         return;
     }
     switch (event->type) {
-        case SDL_EVENT_KEY_DOWN:
-            switch (event->key.key) {
-                case SDLK_BACKSPACE:
+        case SDL_KEYDOWN:
+            switch (event->key.keysym.scancode) {
+                case SDL_SCANCODE_BACKSPACE:
                     char* currentText = self->str;
                     size_t len = strlen(currentText);
                     if (len > 0 && self->cursor_index > 0) {
@@ -218,12 +218,12 @@ static void InputBox_checkKeyDown(Input* input, SDL_Event* event, void* data) {
                         self->cursor_index--;
                     }
                     break;
-            case SDLK_LEFT:
+            case SDL_SCANCODE_LEFT:
                     if (self->cursor_index > 0) {
                         self->cursor_index--;
                     }
                     break;
-            case SDLK_RIGHT:
+            case SDL_SCANCODE_RIGHT:
                     if (self->cursor_index < (int)strlen(self->str)) {
                         self->cursor_index++;
                     }
@@ -231,7 +231,7 @@ static void InputBox_checkKeyDown(Input* input, SDL_Event* event, void* data) {
                     break;
             }
             break;
-        case SDL_EVENT_TEXT_INPUT:
+        case SDL_TEXTINPUT:
             const char* add = event->text.text;
             size_t add_len = add ? strlen(add) : 0;
             if (add_len > 1 ) {

@@ -41,13 +41,13 @@ void Box_render(Box* self, SDL_Renderer* renderer) {
         Color* border = self->border_color;
         SDL_SetRenderDrawColor(renderer, border->r, border->g, border->b, border->a);
         SDL_FRect borderRect = {  rect.x - self->border_size, rect.y - self->border_size, rect.w + (self->border_size * 2), rect.h + (self->border_size * 2)};
-        SDL_RenderFillRect(renderer, &borderRect);
+        SDL_RenderFillRectF(renderer, &borderRect);
     }
 
     if (self->background) {
         Color* background = self->background;
         SDL_SetRenderDrawColor(renderer, background->r, background->g, background->b, background->a);
-        SDL_RenderFillRect(renderer, &rect);
+        SDL_RenderFillRectF(renderer, &rect);
     }
 }
 
@@ -79,7 +79,7 @@ static void Circle_draw(SDL_Renderer* renderer, float centerX, float centerY, in
             int dx = radius - w;
             int dy = radius - h;
             if ((dx*dx + dy*dy) <= (radius * radius)) {
-                SDL_RenderPoint(renderer, centerX + dx, centerY + dy);
+                SDL_RenderDrawPointF(renderer, centerX + dx, centerY + dy);
             }
         }
     }
@@ -176,7 +176,7 @@ void Polygon_render(Polygon* self, SDL_Renderer* renderer) {
         qsort(intersections, nb_intersections, sizeof(Intersection), compare_intersections);
 
         for (int i = 0; i < nb_intersections - 1; i += 2) {
-            SDL_RenderLine(renderer, intersections[i].x, y, intersections[i + 1].x, y);
+            SDL_RenderDrawLineF(renderer, intersections[i].x, y, intersections[i + 1].x, y);
         }
     }
 
@@ -198,7 +198,7 @@ void Polygon_render(Polygon* self, SDL_Renderer* renderer) {
             for (int b = -self->border_size/2; b <= self->border_size/2; b++) {
                 float ox = nx * b;
                 float oy = ny * b;
-                SDL_RenderLine(renderer, x1 + ox, y1 + oy, x2 + ox, y2 + oy);
+                SDL_RenderDrawLine(renderer, x1 + ox, y1 + oy, x2 + ox, y2 + oy);
             }
         }
     }

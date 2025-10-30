@@ -11,7 +11,7 @@ else ()
 endif ()
 
 find_package(SDL2 QUIET)
-find_package(SDL2_image)
+find_package(SDL2_image QUIET)
 find_package(SDL2_mixer QUIET)
 find_package(SDL2_ttf QUIET)
 
@@ -88,7 +88,7 @@ target_include_directories(ProjectC-Sorting PRIVATE include)
 target_include_directories(ProjectC-Sorting PRIVATE ${SDL2_INCLUDE_DIRS} ${SDL2_IMAGE_INCLUDE_DIRS} ${SDL2_MIXER_INCLUDE_DIRS} ${SDL2_TTF_INCLUDE_DIRS})
 
 if (WIN32)
-    target_link_libraries(ProjectC-Sorting PRIVATE SDL2::SDL2 SDL2_image::SDL2_image SDL2_mixer::SDL2_mixer SDL2_ttf::SDL2_ttf tinyfiledialogs)
+    target_link_libraries(ProjectC-Sorting PRIVATE SDL2::SDL2 SDL2::SDL2main SDL2_image::SDL2_image SDL2_mixer::SDL2_mixer SDL2_ttf::SDL2_ttf tinyfiledialogs)
 else ()
     target_link_libraries(ProjectC-Sorting PRIVATE SDL2::SDL2 SDL2_image::SDL2_image SDL2_mixer::SDL2_mixer SDL2_ttf::SDL2_ttf tinyfiledialogs m)
 endif ()

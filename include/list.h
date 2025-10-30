@@ -58,8 +58,3 @@ void* ListIterator_next(ListIterator* iterator);
 int ListIterator_index(ListIterator* iterator);
 
 #define List_push_int(list, value) List_push(list, (void*)(long)value)
-#define List_push_decimal(list, value) \
-do { \
-__typeof__(value) _tmp = (value); \
-List_push((list), &_tmp); \
-} while(0)

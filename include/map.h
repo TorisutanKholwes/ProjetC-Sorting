@@ -46,8 +46,3 @@ void* MapIterator_key(MapIterator* iterator);
 void* MapIterator_value(MapIterator* iterator);
 
 #define Map_put_int(map, key, value) Map_put(map, (void*)key, (void*)value)
-#define Map_put_decimal(map, key, value) \
-do { \
-__typeof__(value) _tmp = (value); \
-Map_put((map), (void*)key, &_tmp); \
-} while(0)

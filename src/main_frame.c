@@ -432,6 +432,7 @@ static bool MainFrame_createPopup(MainFrame* self, void* value, ColumnGraphType 
 
 static bool MainFrame_removePopup(MainFrame* self, void* _, ColumnGraphType type) {
     UNUSED(type);
+    UNUSED(_);
     if (!self) return false;
     if (self->popup) {
         Container_destroy(self->popup);

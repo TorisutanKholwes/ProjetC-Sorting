@@ -30,6 +30,10 @@ foreach ($repo in $repos) {
         }
     }
 
+    Push-Location $srcDir
+    git checkout SDL2
+    Pop-Location
+
     if (-not (Test-Path $buildDir)) {
         New-Item -ItemType Directory -Path $buildDir | Out-Null
     }

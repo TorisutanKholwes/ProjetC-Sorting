@@ -140,9 +140,9 @@ void ColumnGraph_resetContainer(ColumnGraph* graph) {
     ListIterator_destroy(it);
 }
 
-void ColumnGraph_sortGraph(ColumnGraph* graph, ListSortType sort_type) {
+void ColumnGraph_sortGraph(ColumnGraph* graph, ListSortType sort_type, DelayFunc delay_func, MainFrame* main_frame) {
     if (!graph) return;
-    List_sort(graph->bars, sort_type, ColumnGraphBar_compare);
+    List_sort(graph->bars, sort_type, ColumnGraphBar_compare, delay_func, main_frame, graph);
     FlexContainer_clear(graph->container);
     ListIterator* it = ListIterator_new(graph->bars);
     while (ListIterator_hasNext(it)) {

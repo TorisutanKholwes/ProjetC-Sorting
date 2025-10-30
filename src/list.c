@@ -6,8 +6,9 @@
 #include "logger.h"
 #include "utils.h"
 #include "string_builder.h"
+#include "column_graphic.h"
 
-static void List_sortBubble(List* list, CompareFunc compare_func);
+static void List_sortBubble(List* list, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph);
 static void List_sortQuick(List* list, CompareFunc compare_func);
 static void List_sortMerge(List* list, CompareFunc compare_func);
 static int List_defaultCompare(const void* a, const void* b);
@@ -227,7 +228,7 @@ static int List_defaultCompare(const void* a, const void* b) {
     return (long)a - (long)b;
 }
 
-static void List_sortBubble(List* list, CompareFunc compare_func) {
+static void List_sortBubble(List* list, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph) {
     if (!list || list->size < 2) return;
     if (!compare_func) {
         compare_func = List_defaultCompare;
@@ -245,6 +246,7 @@ static void List_sortBubble(List* list, CompareFunc compare_func) {
                 void* temp = node->value;
                 node->value = next->value;
                 next->value = temp;
+                delay_func(mainframe, column_graph);
                 swapped = true;
             }
             node = next;
@@ -385,10 +387,10 @@ static void List_sortMerge(List* list, CompareFunc compare_func) {
     new_last->next = list->head;
 }
 
-void List_sort(List* list, ListSortType sortType, CompareFunc compare_func) {
+void List_sort(List* list, ListSortType sortType, CompareFunc compare_func, DelayFunc delay_func , MainFrame* mainframe, ColumnGraph* column_graph) {
     switch (sortType) {
         case LIST_SORT_TYPE_BUBBLE:
-            List_sortBubble(list, compare_func);
+            List_sortBubble(list, compare_func, delay_func, mainframe, column_graph);
             break;
         case LIST_SORT_TYPE_QUICK:
             List_sortQuick(list, compare_func);

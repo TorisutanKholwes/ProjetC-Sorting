@@ -20,7 +20,7 @@ if(NOT SDL2_FOUND OR NOT SDL2_image_FOUND OR NOT SDL2_mixer_FOUND OR NOT SDL2_tt
 
     if (WIN32)
         message(STATUS "Installing SDL3 and extensions on Windows using PowerShell script.")
-        set(INSTALL_SCRIPT "${CMAKE_SOURCE_DIR}/install_sdl3.ps1")
+        set(INSTALL_SCRIPT "${CMAKE_SOURCE_DIR}/install_libs.ps1")
         if(NOT EXISTS "${INSTALL_SCRIPT}")
             message(FATAL_ERROR "Missing PowerShell install script: ${INSTALL_SCRIPT}")
         endif()

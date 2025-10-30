@@ -9,7 +9,7 @@
 #include "map.h"
 #include "utils.h"
 
-Input *Input_create() {
+Input* Input_create() {
     Input *input = calloc(1, sizeof(Input));
     if (!input) {
         error("Failed to allocate memory for Input");

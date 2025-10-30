@@ -38,6 +38,8 @@ static void MainFrame_onRuneM(Input* input, SDL_Event* evt, MainFrame* self);
 
 static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self);
 
+static void MainFrame_DelaySort(MainFrame* self, ColumnGraph* graph);
+
 static void MainFrame_onEnter(Input* input, SDL_Event* evt, MainFrame* self);
 
 static void MainFrame_onClick(Input* input, SDL_Event* evt, MainFrame* self);
@@ -517,15 +519,26 @@ static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self) {
             if (hasPopup) {
                 ColumnGraph_removeHovering(self->graph[i]);
             }
-            ColumnGraph_sortGraph(self->graph[i], LIST_SORT_TYPE_BUBBLE);
+            ColumnGraph_sortGraph(self->graph[i], LIST_SORT_TYPE_BUBBLE, MainFrame_DelaySort, self);
         }
     } else {
         if (hasPopup) {
             ColumnGraph_removeHovering(self->graph[self->selected_graph_index]);
         }
-        ColumnGraph_sortGraph(self->graph[self->selected_graph_index], LIST_SORT_TYPE_BUBBLE);
+        ColumnGraph_sortGraph(self->graph[self->selected_graph_index], LIST_SORT_TYPE_BUBBLE, MainFrame_DelaySort, self);
     }
     MainFrame_addElements(self, self->app);
+}
+
+static void MainFrame_DelaySort(MainFrame* self, ColumnGraph* graph) {
+    if (!graph) {
+        log_message(LOG_LEVEL_WARN, "No graph to sort");
+        return;
+    }
+    ColumnGraph_resetContainer(graph);
+    MainFrame_addElements(self, self->app);
+    MainFrame_render(self->app->renderer, self);
+    SDL_Delay(16);
 }
 
 static void MainFrame_onEnter(Input* input, SDL_Event* evt, MainFrame* self) {

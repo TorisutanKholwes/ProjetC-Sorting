@@ -246,7 +246,7 @@ static void List_sortBubble(List* list, CompareFunc compare_func, DelayFunc dela
                 void* temp = node->value;
                 node->value = next->value;
                 next->value = temp;
-                delay_func(mainframe, column_graph);
+                delay_func(mainframe, column_graph, a);
                 swapped = true;
             }
             node = next;

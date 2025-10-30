@@ -38,7 +38,7 @@ static void MainFrame_onRuneM(Input* input, SDL_Event* evt, MainFrame* self);
 
 static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self);
 
-static void MainFrame_DelaySort(MainFrame* self, ColumnGraph* graph);
+static void MainFrame_DelaySort(MainFrame* self, ColumnGraph* graph, ColumnGraphBar* actual);
 
 static void MainFrame_onEnter(Input* input, SDL_Event* evt, MainFrame* self);
 
@@ -530,14 +530,20 @@ static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self) {
     MainFrame_addElements(self, self->app);
 }
 
-static void MainFrame_DelaySort(MainFrame* self, ColumnGraph* graph) {
+static void MainFrame_DelaySort(MainFrame* self, ColumnGraph* graph, ColumnGraphBar* actual) {
     if (!graph) {
         log_message(LOG_LEVEL_WARN, "No graph to sort");
         return;
     }
+    actual->element->data.box->background = COLOR_WHITE;
     ColumnGraph_resetContainer(graph);
     MainFrame_addElements(self, self->app);
+    Color* background = self->app->theme->background;
+    SDL_SetRenderDrawColor(self->app->renderer, background->r, background->g, background->b, background->a);
+    SDL_RenderClear(self->app->renderer);
     MainFrame_render(self->app->renderer, self);
+    SDL_RenderPresent(self->app->renderer);
+    actual->element->data.box->background = actual->color;
     SDL_Delay(16);
 }
 

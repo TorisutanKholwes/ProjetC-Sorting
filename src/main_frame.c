@@ -244,10 +244,10 @@ void MainFrame_destroy(MainFrame* self) {
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_ESCAPE, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_S, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_P, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_M, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_Q, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_RETURN, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_SEMICOLON, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_A, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_RETURN, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_Q, self);
 
     Input_removeOneEventHandler(self->app->input, SDL_MOUSEBUTTONDOWN, self);
     Input_removeOneEventHandler(self->app->input, SDL_MOUSEMOTION, self);
@@ -298,10 +298,10 @@ void MainFrame_focus(MainFrame* self) {
     Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_ESCAPE, (EventHandlerFunc) MainFrame_onEscape, self);
     Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_S, (EventHandlerFunc) MainFrame_onRuneS, self);
     Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_P, (EventHandlerFunc) MainFrame_onRuneP, self);
-    Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_M, (EventHandlerFunc) MainFrame_onRuneM, self);
-    Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_Q, (EventHandlerFunc) MainFrame_onRuneQ, self);
+    Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_SEMICOLON, (EventHandlerFunc) MainFrame_onRuneM, self);
+    Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_A, (EventHandlerFunc) MainFrame_onRuneQ, self);
     Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_RETURN, (EventHandlerFunc) MainFrame_onEnter, self);
-    Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_A, (EventHandlerFunc) MainFrame_onRuneA, self);
+    Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_Q, (EventHandlerFunc) MainFrame_onRuneA, self);
 
     Input_addEventHandler(self->app->input, SDL_MOUSEBUTTONDOWN, (EventHandlerFunc) MainFrame_onClick, self);
     Input_addEventHandler(self->app->input, SDL_MOUSEMOTION, (EventHandlerFunc) MainFrame_onMouseMove, self);
@@ -314,10 +314,10 @@ void MainFrame_unfocus(MainFrame* self) {
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_ESCAPE, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_S, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_P, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_M, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_Q, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_RETURN, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_SEMICOLON, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_A, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_RETURN, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_Q, self);
 
     Input_removeOneEventHandler(self->app->input, SDL_MOUSEBUTTONDOWN, self);
     Input_removeOneEventHandler(self->app->input, SDL_MOUSEMOTION, self);

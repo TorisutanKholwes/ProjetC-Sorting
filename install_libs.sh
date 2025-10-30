@@ -61,5 +61,16 @@ for REPO in "${REPOS[@]}"; do
   install_lib "$REPO" false
 done
 
+echo "Installing tinyfiledialogs..."
+
+DIALOG_DIR="$INSTALL_FULL_DIR/tinyfiledialogs"
+
+mkdir -p "$DIALOG_DIR"
+pushd "$DIALOG_DIR" > /dev/null
+curl -L "https://raw.githubusercontent.com/native-toolkit/tinyfiledialogs/master/tinyfiledialogs.c" -o "$DIALOG_DIR/tinyfiledialogs.c"
+curl -L "https://raw.githubusercontent.com/native-toolkit/tinyfiledialogs/master/tinyfiledialogs.h" -o "$DIALOG_DIR/tinyfiledialogs.h"
+
+popd > /dev/null
+
 echo -e "\nSDL3 installation complete in $INSTALL_DIR"
 exit 0

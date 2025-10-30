@@ -109,7 +109,6 @@ Color* Color_rgba(const int r, const int g, const int b, const int a) {
 
 Color* Color_hsv(float h, float s, float v) {
     float dR, dG, dB;
-    int r, g, b;
 
     h = fmodf(h, 360.0f);
     float c = v * s;
@@ -130,9 +129,9 @@ Color* Color_hsv(float h, float s, float v) {
         dR = c; dG = 0; dB = x;
     }
 
-    r = (int) roundf((dR + m) * 255.f);
-    g = (int) roundf((dG + m) * 255.f);
-    b = (int) roundf((dB + m) * 255.f);
+    int r = (int) roundf((dR + m) * 255.f);
+    int g = (int) roundf((dG + m) * 255.f);
+    int b = (int) roundf((dB + m) * 255.f);
     return Color_rgb(r, g, b);
 }
 

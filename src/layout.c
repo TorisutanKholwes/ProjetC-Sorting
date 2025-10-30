@@ -15,12 +15,6 @@
 #include "utils.h"
 
 static void FlexItem_getElementSize(FlexItem *item, float *width, float *height) {
-    if (!item || !item->element) {
-        *width = 0;
-        *height = 0;
-        return;
-    }
-
     Element *element = item->element;
     switch (element->type) {
         case ELEMENT_TYPE_BUTTON: {

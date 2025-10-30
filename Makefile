@@ -16,17 +16,17 @@ ifeq ($(UNAME_S),Linux)
     EXECUTABLE := $(BUILD_DIR)/$(APP_NAME)
     LEAK_TOOL := valgrind
     LEAK_TOOL_ARGS := --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose
-    SDL_SCRIPT := bash install_sdl3.sh
+    SDL_SCRIPT := bash install_libs.sh
 else ifeq ($(UNAME_S),Darwin)
     EXECUTABLE := $(BUILD_DIR)/$(APP_NAME)
     LEAK_TOOL := leaks
     LEAK_TOOL_ARGS := --atExit --
-    SDL_SCRIPT := bash install_sdl3.sh
+    SDL_SCRIPT := bash install_libs.sh
 else
     EXECUTABLE := $(BUILD_DIR)/Release/$(APP_NAME).exe
     LEAK_TOOL := echo "Memory leak detection not available on Windows. Please use Visual Studio's diagnostic tools."
     LEAK_TOOL_ARGS :=
-    SDL_SCRIPT := powershell -ExecutionPolicy Bypass -File install_sdl3.ps1
+    SDL_SCRIPT := powershell -ExecutionPolicy Bypass -File install_libs.ps1
 endif
 
 COLOR_RESET := \033[0m

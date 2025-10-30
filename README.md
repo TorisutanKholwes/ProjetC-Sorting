@@ -99,10 +99,10 @@ If the automatic SDL3 installation during CMake configuration fails, you can man
 
 ```bash
 # Install to default location (./libs)
-bash install_sdl3.sh
+bash install_libs.sh
 
 # Or specify a custom installation directory
-bash install_sdl3.sh /path/to/install/dir
+bash install_libs.sh /path/to/install/dir
 ```
 
 After manual installation, configure CMake with the installation path:

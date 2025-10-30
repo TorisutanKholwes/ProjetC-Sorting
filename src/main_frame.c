@@ -24,6 +24,7 @@
 #include "select.h"
 #include "style.h"
 #include "text.h"
+#include "tinyfiledialogs.h"
 
 static void MainFrame_addElements(MainFrame* self, App* app);
 
@@ -196,7 +197,7 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
     Select_onChange(select, (EventHandlerFunc) MainFrame_onGraphThemeChange);
     Container_addChild(container, Element_fromSelect(select, NULL));
 
-    y += select->rect.h + 40;
+    //y += select->rect.h + 40;
 
     float buttonXOffset = 20;
     Button* closeButton = Button_new(self->app,
@@ -553,19 +554,12 @@ static void MainFrame_onEnter(Input* input, SDL_Event* evt, MainFrame* self) {
     MainFrame_updateGraphs(self);
 }
 
-static void MainFrame_loadFileCallback(void* userdata, const char* const* filelist, int filter) {
-    UNUSED(filter);
-    if (!filelist) {
-        error("Error loading file : %s", SDL_GetError());
-        return;
-    }
-    const char* filename = filelist[0];
+static void MainFrame_loadFileCallback(MainFrame* self, const char* filename) {
     FILE* file = fopen(filename, "r");
     if (!file) {
         log_message(LOG_LEVEL_WARN, "No file selected or failed to open file");
         return;
     }
-    MainFrame* self = userdata;
     int values_len;
     fscanf(file, "%d", &values_len);
     void** values = calloc(values_len, sizeof(void*));
@@ -592,8 +586,6 @@ static void MainFrame_loadFileCallback(void* userdata, const char* const* fileli
                 fscanf(file, format, buffer);
                 values[i] = Strdup(buffer);
             }
-            break;
-        default:
             break;
     }
     fclose(file);
@@ -633,11 +625,18 @@ static void MainFrame_loadFile(Input* input, SDL_Event* evt, Button* button) {
         Container* parent = button->parent;
         if (parent->parent) {
             MainFrame* mainFrame = parent->parent;
-            UNUSED(mainFrame);
-            log_message(LOG_LEVEL_WARN, "Need to reimplement file dialog because not working for SDL2");
-            /*const SDL_DialogFileFilter filters[] = {{"Text File", "txt"}};
-            SDL_ShowOpenFileDialog(MainFrame_loadFileCallback, mainFrame, mainFrame->app->window, filters, 1, NULL, 0);*/
-            MainFrame_loadFileCallback(NULL, NULL, 0);
+            const char* filterPatterns[1] = { "*.txt" };
+            const char* filePath = tinyfd_openFileDialog("Open data File",
+                "",
+                1,
+                filterPatterns,
+                "Text Files",
+                0
+                );
+            if (filePath) {
+                const char* paths[1] = { filePath };
+                MainFrame_loadFileCallback(mainFrame, paths[0]);
+            }
         }
     }
 }
@@ -726,11 +725,7 @@ static void MainFrame_onMouseMove(Input* input, SDL_Event* evt, MainFrame* self)
 
 static void MainFrame_updateHelpImage(MainFrame* self) {
     Image* img = Element_getById(self->elements, "help_image")->data.image;
-    if (self->hovered_help) {
-        Image_changePath(img, self->app, "help_hover.svg");
-    } else {
-        Image_changePath(img, self->app, "help_white.svg");
-    }
+    Image_changePath(img, self->app, "help_white.svg");
 }
 
 static void MainFrame_onWindowResize(Input* input, SDL_Event* evt, MainFrame* self) {

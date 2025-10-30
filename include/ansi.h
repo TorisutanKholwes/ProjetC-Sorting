@@ -1,8 +1,7 @@
 /*
  * Copyright (c) 2025 Torisutan
- * ALl rights reserved
+ * All rights reserved
  */
-
 #pragma once
 
 #define ANSI_COLOR_RED     "\x1b[31m"

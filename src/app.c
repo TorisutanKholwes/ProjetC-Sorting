@@ -102,7 +102,3 @@ void App_frameBack(App* app) {
 Frame* App_getCurrentFrame(const App* app) {
     return List_getLast(app->stack);
 }
-
-void App_getCurrentSize(const App* app, int* w, int* h) {
-    SDL_GetWindowSize(app->window, w, h);
-}

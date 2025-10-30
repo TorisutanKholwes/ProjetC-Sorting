@@ -129,6 +129,17 @@ void ColumnGraph_shuffleBars(ColumnGraph* graph) {
     ListIterator_destroy(it);
 }
 
+void ColumnGraph_resetContainer(ColumnGraph* graph) {
+    if (!graph) return;
+    FlexContainer_clear(graph->container);
+    ListIterator* it = ListIterator_new(graph->bars);
+    while (ListIterator_hasNext(it)) {
+        ColumnGraphBar* bar = (ColumnGraphBar*)ListIterator_next(it);
+        FlexContainer_addElement(graph->container, bar->element, 1.f, 1.f, -1.f);
+    }
+    ListIterator_destroy(it);
+}
+
 void ColumnGraph_sortGraph(ColumnGraph* graph, ListSortType sort_type) {
     if (!graph) return;
     List_sort(graph->bars, sort_type, ColumnGraphBar_compare);

@@ -10,13 +10,13 @@
 #include "utils.h"
 #include "list.h"
 
-Container* Container_new(float x, float y, float width, float height, Color* color, void* parent) {
+Container* Container_new(float x, float y, float width, float height, bool from_center, Color* color, void* parent) {
     Container* container = calloc(1, sizeof(Container));
     if (!container) {
         error("Failed to allocate memory for Container");
         return NULL;
     }
-    container->box = Box_new(width, height, 0, Position_new(x, y), color, NULL, false);
+    container->box = Box_new(width, height, 0, Position_new(x, y), color, NULL, from_center);
     container->children = List_create();
     container->parent = parent;
 
@@ -71,4 +71,20 @@ void Container_setSize(Container* container, float width, float height) {
     if (!container) return;
 
     container->box->size = (Size) {width, height};
+}
+
+Position* Container_getPosition(Container* container) {
+    if (!container) return NULL;
+
+    float x, y;
+
+    Box_getPosition(container->box, &x, &y);
+
+    return Position_new(x, y);
+}
+
+Size Container_getSize(Container* container) {
+    if (!container) return (Size){0, 0};
+
+    return container->box->size;
 }

@@ -49,6 +49,7 @@ void List_set(List* list, size_t index, void* value);
 char* List_toString(List* list, const char* format, void* (*formatValueFunc)(void* value));
 void List_swap(List* list, size_t index1, size_t index2);
 void List_sort(List* list, ListSortType sortType, CompareFunc compare_func, DelayFunc, MainFrame* mainframe, ColumnGraph* column_graph);
+bool List_isSorted(List* list, CompareFunc compare_func);
 void List_shuffle(List* list);
 
 ListIterator* ListIterator_new(List* list);

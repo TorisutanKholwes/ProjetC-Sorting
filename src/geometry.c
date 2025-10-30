@@ -51,6 +51,15 @@ void Box_render(Box* self, SDL_Renderer* renderer) {
     }
 }
 
+void Box_setBorder(Box* self, int border_size, Color* border_color) {
+    if (!self) return;
+    if (self->border_color) {
+        Color_destroy(self->border_color);
+    }
+    self->border_size = border_size;
+    self->border_color = border_color;
+}
+
 Circle* Circle_new(int radius, int border_size, Position* center, Color* background, Color* border_color) {
     Circle* self = calloc(1, sizeof(Circle));
     if (!self) {
@@ -233,4 +242,15 @@ void Polygon_addVertex(Polygon* self, Position* vertex) {
         return;
     }
     self->vertices = new_vertices;
+}
+
+void Box_getPosition(Box* self, float* x, float* y) {
+    if (!self) return;
+    if (!self->center) {
+        *x = self->position->x;
+        *y = self->position->y;
+    } else {
+        *x = self->position->x - (self->size.width / 2);
+        *y = self->position->y - (self->size.height / 2);
+    }
 }

@@ -54,3 +54,5 @@ int ColumnGraphBar_compare(const void* a, const void* b);
 Color** ColumnGraph_getColors(ColumnGraphStyle style, int* out_count);
 char* ColumnGraph_getStyleName(ColumnGraphStyle style);
 Color* ColumnGraph_getHoverColor(ColumnGraphStyle style);
+
+char* ColumnGraph_getTypeName(ColumnGraphType type);

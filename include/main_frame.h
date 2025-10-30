@@ -14,6 +14,7 @@ struct MainFrame {
     ColumnGraph** graph;
     ColumnGraphStyle graph_style;
     Container* popup;
+    Container* graph_info;
     int graph_count;
     int bar_count;
     int selected_graph_index;

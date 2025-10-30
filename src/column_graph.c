@@ -404,3 +404,14 @@ Color* ColumnGraph_getHoverColor(ColumnGraphStyle style) {
             return COLOR_WHITE;
     }
 }
+
+char* ColumnGraph_getTypeName(ColumnGraphType type) {
+    switch (type) {
+        case GRAPH_TYPE_INT:
+            return "Integer";
+        case GRAPH_TYPE_STRING:
+            return "String";
+        default:
+            return "Unknow";
+    }
+}

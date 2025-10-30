@@ -44,12 +44,13 @@ struct Container {
  * @param y The top-left y coordinate of the container
  * @param width The width of the container
  * @param height The height of the container
+ * @param from_center If true, (x, y) represents the center of the container; otherwise, the top-left corner
  * @param color The background color of the container
  * @param parent The parent object of the container
  *
  * @return A pointer to the newly created Container instance
  */
-Container* Container_new(float x, float y, float width, float height, Color* color, void* parent);
+Container* Container_new(float x, float y, float width, float height, bool from_center, Color* color, void* parent);
 
 /**
  * @brief Destroy a Container instance
@@ -124,3 +125,6 @@ void Container_unFocus(Container* container);
  * @param height  - The new height of the container
  */
 void Container_setSize(Container* container, float width, float height);
+
+Position* Container_getPosition(Container* container);
+Size Container_getSize(Container* container);

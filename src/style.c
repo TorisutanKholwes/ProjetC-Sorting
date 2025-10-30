@@ -72,6 +72,16 @@ TextStyle* TextStyle_defaultFromTheme(Theme* theme, ResourceManager* resource_ma
     return style;
 }
 
+TextStyle* TextStyle_deepCopy(TextStyle* style) {
+    if (!style) return NULL;
+
+    return TextStyle_new(
+        style->font,
+        style->size,
+        Color_copy(style->color),
+        style->style);
+}
+
 FullStyleColors* FullStyleColors_new(Color* background, Color* border, Color* text) {
     FullStyleColors* colors = calloc(1, sizeof(FullStyleColors));
     if (!colors) {

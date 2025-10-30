@@ -28,6 +28,7 @@ TextStyle* TextStyle_new(TTF_Font* font, int size, Color* color, int style);
 void TextStyle_destroy(TextStyle* style);
 TextStyle* TextStyle_default(ResourceManager* resource_manager);
 TextStyle* TextStyle_defaultFromTheme(Theme* theme, ResourceManager* resource_manager);
+TextStyle* TextStyle_deepCopy(TextStyle* style);
 
 struct FullStyleColors {
     Color* background;

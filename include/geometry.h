@@ -19,6 +19,8 @@ struct Box {
 Box* Box_new(float width, float height, int border_size, Position* position, Color* background, Color* border_color, bool center);
 void Box_destroy(Box* self);
 void Box_render(Box* self, SDL_Renderer* renderer);
+void Box_setBorder(Box* self, int border_size, Color* border_color);
+void Box_getPosition(Box* self, float* x, float* y);
 
 struct Circle {
     int radius;

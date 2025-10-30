@@ -404,6 +404,22 @@ void List_sort(List* list, ListSortType sortType, CompareFunc compare_func, Dela
     }
 }
 
+bool List_isSorted(List* list, CompareFunc compare_func) {
+    if (!list || list->size < 2) return true;
+    if (!compare_func) {
+        compare_func = List_defaultCompare;
+    }
+
+    ListNode* node = list->head->next;
+    while (node->next != list->head) {
+        if (compare_func(node->value, node->next->value) > 0) {
+            return false;
+        }
+        node = node->next;
+    }
+    return true;
+}
+
 void List_shuffle(List* list) {
     if (!list || list->size < 2) return;
 

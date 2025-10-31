@@ -11,6 +11,8 @@
 static void List_sortBubble(List* list, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph);
 static void List_sortQuick(List* list, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph);
 static void List_sortMerge(List* list, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph);
+static void List_sortInsertion(List* list, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph);
+static void List_sortBitonic(List* list, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph);
 static int List_defaultCompare(const void* a, const void* b);
 static ListNode* partitionQS(ListNode* low, ListNode* high, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph);
 static void quickSortRec(ListNode* low, ListNode* high, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph);
@@ -386,6 +388,71 @@ static void List_sortMerge(List* list, CompareFunc compare_func, DelayFunc delay
     free(temp_values);
 }
 
+static void List_sortInsertion(List* list, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph) {
+    if (!list || list->size < 2) return;
+
+    if (!compare_func) {
+        compare_func = List_defaultCompare;
+    }
+
+    for (size_t i = 1; i < list->size; i++) {
+        void* key = List_get(list, i);
+        int j = i - 1;
+
+        while (j >= 0 && compare_func(List_get(list, j), key) > 0) {
+            void* value_to_move = List_get(list, j);
+            List_set(list, j + 1, value_to_move);
+            if (delay_func) {
+                delay_func(mainframe, column_graph, value_to_move);
+            }
+            j = j - 1;
+        }
+        List_set(list, j + 1, key);
+        if (delay_func) {
+            delay_func(mainframe, column_graph, key);
+        }
+    }
+}
+
+static void bitonicMerge(List* list, int low, int count, int direction, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph) {
+    if (count > 1) {
+        int k = count / 2;
+        for (int i = low; i < low + k; i++) {
+            void* val1 = List_get(list, i);
+            void* val2 = List_get(list, i + k);
+            if ((direction == 1 && compare_func(val1, val2) > 0) || (direction == 0 && compare_func(val1, val2) < 0)) {
+                List_swap(list, i, i + k);
+                if (delay_func) {
+                    delay_func(mainframe, column_graph, val1);
+                }
+            }
+        }
+        bitonicMerge(list, low, k, direction, compare_func, delay_func, mainframe, column_graph);
+        bitonicMerge(list, low + k, k, direction, compare_func, delay_func, mainframe, column_graph);
+    }
+}
+
+static void bitonicSortRec(List* list, int low, int count, int direction, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph) {
+    if (count > 1) {
+        int k = count / 2;
+        bitonicSortRec(list, low, k, 1, compare_func, delay_func, mainframe, column_graph);
+        bitonicSortRec(list, low + k, k, 0, compare_func, delay_func, mainframe, column_graph);
+        bitonicMerge(list, low, count, direction, compare_func, delay_func, mainframe, column_graph);
+    }
+}
+
+static void List_sortBitonic(List* list, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph) {
+    if (!list || list->size < 2) return;
+    if ((list->size & (list->size - 1)) != 0) {
+        log_message(LOG_LEVEL_ERROR, "Bitonic sort requires the list size to be a power of 2.");
+        return;
+    }
+    if (!compare_func) {
+        compare_func = List_defaultCompare;
+    }
+    bitonicSortRec(list, 0, list->size, 1, compare_func, delay_func, mainframe, column_graph);
+}
+
 
 void List_sort(List* list, ListSortType sortType, CompareFunc compare_func, DelayFunc delay_func , MainFrame* mainframe, ColumnGraph* column_graph) {
     switch (sortType) {
@@ -397,6 +464,12 @@ void List_sort(List* list, ListSortType sortType, CompareFunc compare_func, Dela
             break;
         case LIST_SORT_TYPE_MERGE:
             List_sortMerge(list, compare_func, delay_func, mainframe, column_graph);
+            break;
+        case LIST_SORT_TYPE_INSERTION:
+            List_sortInsertion(list, compare_func, delay_func, mainframe, column_graph);
+            break;
+        case LIST_SORT_TYPE_BITONIC:
+            List_sortBitonic(list, compare_func, delay_func, mainframe, column_graph);
             break;
         default:
             log_message(LOG_LEVEL_WARN, "Unknown ListSortType: %d", sortType);
@@ -481,6 +554,10 @@ char* ListSortType_toString(ListSortType sortType) {
             return "Quick Sort";
         case LIST_SORT_TYPE_MERGE:
             return "Merge Sort";
+        case LIST_SORT_TYPE_INSERTION:
+            return "Insertion Sort";
+        case LIST_SORT_TYPE_BITONIC:
+            return "Bitonic Sort";
         default:
             return "Unknown Sort Type";
     }

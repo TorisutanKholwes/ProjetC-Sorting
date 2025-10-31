@@ -86,6 +86,7 @@ typedef struct Timer Timer;
 /** @brief FlexContainer for flexible box layout */
 typedef struct FlexContainer FlexContainer;
 /** @brief FlexItem for items within a FlexContainer */
+
 typedef struct FlexItem FlexItem;
 /** @brief Flexbox direction enumeration */
 typedef enum FlexDirection FlexDirection;
@@ -141,6 +142,8 @@ typedef enum ListSortType {
     LIST_SORT_TYPE_BUBBLE,
     LIST_SORT_TYPE_QUICK,
     LIST_SORT_TYPE_MERGE,
+    LIST_SORT_TYPE_INSERTION,
+    LIST_SORT_TYPE_BITONIC,
     LIST_SORT_TYPE_COUNT
 } ListSortType;
 

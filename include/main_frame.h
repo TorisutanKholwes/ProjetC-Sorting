@@ -34,6 +34,8 @@ struct MainFrame {
     float settings_width;
 
     bool hovered_help;
+
+    bool func_run;
 };
 
 MainFrame* MainFrame_new(App* app);

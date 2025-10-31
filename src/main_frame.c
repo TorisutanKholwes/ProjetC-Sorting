@@ -4,6 +4,8 @@
  */
 #include "main_frame.h"
 
+#include <iso646.h>
+
 #include "app.h"
 #include "button.h"
 #include "column_graph.h"
@@ -109,6 +111,8 @@ MainFrame* MainFrame_new(App* app) {
     }
 
     self->popup = NULL;
+
+    self->func_run = true;
 
     MainFrame_addElements(self, app);
 
@@ -574,7 +578,8 @@ static void MainFrame_quitApp(Input* input, SDL_Event* evt, Button* button) {
 }
 
 static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self) {
-    if (!self || self->showSettings || self->graph_info) return;
+    if (!self || self->showSettings || self->graph_info || !self->func_run) return;
+    self->func_run = false;
     UNUSED(input);
     UNUSED(evt);
     if (self->showSettings) return;
@@ -593,6 +598,7 @@ static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self) {
         ColumnGraph_sortGraph(self->graph[self->selected_graph_index], MainFrame_DelaySort, self);
     }
     MainFrame_addElements(self, self->app);
+    self->func_run = true;
 }
 
 static void MainFrame_DelaySort(MainFrame* self, ColumnGraph* graph, ColumnGraphBar* actual) {
@@ -600,7 +606,7 @@ static void MainFrame_DelaySort(MainFrame* self, ColumnGraph* graph, ColumnGraph
         log_message(LOG_LEVEL_WARN, "No graph to sort");
         return;
     }
-    actual->element->data.box->background = COLOR_WHITE;
+    actual->element->data.box->background = COLOR_RED;
     ColumnGraph_resetContainer(graph);
     MainFrame_addElements(self, self->app);
     Color* background = self->app->theme->background;

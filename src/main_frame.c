@@ -606,7 +606,7 @@ static void MainFrame_DelaySort(MainFrame* self, ColumnGraph* graph, ColumnGraph
         log_message(LOG_LEVEL_WARN, "No graph to sort");
         return;
     }
-    actual->element->data.box->background = COLOR_WHITE;
+    actual->element->data.box->background = COLOR_RED;
     ColumnGraph_resetContainer(graph);
     MainFrame_addElements(self, self->app);
     Color* background = self->app->theme->background;

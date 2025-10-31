@@ -9,9 +9,12 @@
 #include "column_graph.h"
 
 static void List_sortBubble(List* list, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph);
-static void List_sortQuick(List* list, CompareFunc compare_func);
-static void List_sortMerge(List* list, CompareFunc compare_func);
+static void List_sortQuick(List* list, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph);
+static void List_sortMerge(List* list, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph);
 static int List_defaultCompare(const void* a, const void* b);
+static ListNode* partitionQS(ListNode* low, ListNode* high, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph);
+static void quickSortRec(ListNode* low, ListNode* high, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph);
+
 
 List *List_create() {
     List *list = calloc(1, sizeof(List));
@@ -246,7 +249,9 @@ static void List_sortBubble(List* list, CompareFunc compare_func, DelayFunc dela
                 void* temp = node->value;
                 node->value = next->value;
                 next->value = temp;
-                delay_func(mainframe, column_graph, a);
+                if (delay_func) {
+                    delay_func(mainframe, column_graph, a);
+                }
                 swapped = true;
             }
             node = next;
@@ -254,7 +259,7 @@ static void List_sortBubble(List* list, CompareFunc compare_func, DelayFunc dela
     } while (swapped);
 }
 
-static ListNode* partitionQS(ListNode* low, ListNode* high, CompareFunc compare_func) {
+static ListNode* partitionQS(ListNode* low, ListNode* high, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph) {
     void* pivot = high->value;
     ListNode* i = low ? low->prev : NULL;
     for (ListNode* j = low; j != high; j = j->next) {
@@ -263,25 +268,31 @@ static ListNode* partitionQS(ListNode* low, ListNode* high, CompareFunc compare_
             void* tmp = i->value;
             i->value = j->value;
             j->value = tmp;
+            if (delay_func) {
+                delay_func(mainframe, column_graph, j->value);
+            }
         }
     }
     i = (i == NULL) ? low : i->next;
     void* tmp = i->value;
     i->value = high->value;
     high->value = tmp;
+    if (delay_func) {
+        delay_func(mainframe, column_graph, i->value);
+    }
     return i;
 }
 
-static void quickSortRec(ListNode* low, ListNode* high, CompareFunc compare_func) {
+static void quickSortRec(ListNode* low, ListNode* high, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph) {
     if (!low || !high) return;
     if (low != high && low != high->next) {
-        ListNode* p = partitionQS(low, high, compare_func);
-        quickSortRec(low, p->prev, compare_func);
-        quickSortRec(p->next, high, compare_func);
+        ListNode* p = partitionQS(low, high, compare_func, delay_func, mainframe, column_graph);
+        quickSortRec(low, p->prev, compare_func, delay_func, mainframe, column_graph);
+        quickSortRec(p->next, high, compare_func, delay_func, mainframe, column_graph);
     }
 }
 
-static void List_sortQuick(List* list, CompareFunc compare_func) {
+static void List_sortQuick(List* list, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph) {
     if (!list || list->size < 2) return;
 
     if (!compare_func) {
@@ -294,7 +305,7 @@ static void List_sortQuick(List* list, CompareFunc compare_func) {
     first->prev = NULL;
     last->next = NULL;
 
-    quickSortRec(first, last, compare_func);
+    quickSortRec(first, last, compare_func, delay_func, mainframe, column_graph);
 
     ListNode* new_first = first;
     while (new_first->prev) {
@@ -308,84 +319,73 @@ static void List_sortQuick(List* list, CompareFunc compare_func) {
     new_last->next = list->head;
     list->head->next = new_first;
     list->head->prev = new_last;
+
 }
 
-static ListNode* splitMiddle(ListNode* head) {
-    if (!head || !head->next) return NULL;
-    ListNode* slow = head;
-    ListNode* fast = head->next;
-    while (fast && fast->next) {
-        slow = slow->next;
-        fast = fast->next->next;
+// Helper functions for the new visual merge sort
+static void merge(List* list, void** temp_values, int left, int mid, int right, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph) {
+    for (int i = left; i <= right; i++) {
+        temp_values[i] = List_get(list, i);
     }
-    ListNode* mid = slow->next;
-    slow->next = NULL;
-    if (mid) mid->prev = NULL;
-    return mid;
-}
 
-static ListNode* mergeTwoSorted(ListNode* a, ListNode* b, CompareFunc compare_func) {
-    if (!a) return b;
-    if (!b) return a;
-    ListNode* head = NULL;
-    ListNode* tail = NULL;
+    int i = left;
+    int j = mid + 1;
+    int k = left;
 
-    while (a && b) {
-        ListNode* take = NULL;
-        if (compare_func(a->value, b->value) <= 0) {
-            take = a;
-            a = a->next;
+    while (i <= mid && j <= right) {
+        if (compare_func(temp_values[i], temp_values[j]) <= 0) {
+            List_set(list, k, temp_values[i]);
+            if (delay_func) delay_func(mainframe, column_graph, temp_values[i]);
+            i++;
         } else {
-            take = b;
-            b = b->next;
+            List_set(list, k, temp_values[j]);
+            if (delay_func) delay_func(mainframe, column_graph, temp_values[j]);
+            j++;
         }
-        take->next = NULL;
-        take->prev = tail;
-        if (tail) tail->next = take;
-        tail = take;
-        if (!head) head = take;
+        k++;
     }
-    ListNode* rem = a ? a : b;
-    while (rem) {
-        ListNode* next = rem->next;
-        rem->next = NULL;
-        rem->prev = tail;
-        if (tail) tail->next = rem;
-        tail = rem;
-        if (!head) head = rem;
-        rem = next;
+
+    while (i <= mid) {
+        List_set(list, k, temp_values[i]);
+        if (delay_func) delay_func(mainframe, column_graph, temp_values[i]);
+        i++;
+        k++;
     }
-    return head;
+
+    while (j <= right) {
+        List_set(list, k, temp_values[j]);
+        if (delay_func) delay_func(mainframe, column_graph, temp_values[j]);
+        j++;
+        k++;
+    }
 }
 
-static ListNode* mergeSortRec(ListNode* head, CompareFunc compare_func) {
-    if (!head || !head->next) return head;
-    ListNode* mid = splitMiddle(head);
-    ListNode* left = mergeSortRec(head, compare_func);
-    ListNode* right = mergeSortRec(mid, compare_func);
-    return mergeTwoSorted(left, right, compare_func);
+static void mergeSortRec(List* list, void** temp_values, int left, int right, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph) {
+    if (left < right) {
+        int mid = left + (right - left) / 2;
+        mergeSortRec(list, temp_values, left, mid, compare_func, delay_func, mainframe, column_graph);
+        mergeSortRec(list, temp_values, mid + 1, right, compare_func, delay_func, mainframe, column_graph);
+        merge(list, temp_values, left, mid, right, compare_func, delay_func, mainframe, column_graph);
+    }
 }
 
-static void List_sortMerge(List* list, CompareFunc compare_func) {
+static void List_sortMerge(List* list, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph) {
     if (!list || list->size < 2) return;
-
-    ListNode* first = list->head->next;
-    ListNode* last = list->head->prev;
-    first->prev = NULL;
-    last->next = NULL;
-
-    ListNode* new_first = mergeSortRec(first, compare_func);
-
-    ListNode* new_last = new_first;
-    while (new_last->next) {
-        new_last = new_last->next;
+    if (!compare_func) {
+        compare_func = List_defaultCompare;
     }
 
-    list->head->next = new_first;
-    list->head->prev = new_last;
-    new_first->prev = list->head;
-    new_last->next = list->head;
+    void** temp_values = malloc(list->size * sizeof(void*));
+    if (!temp_values) {
+        error("Failed to allocate memory for merge sort temporary array");
+        return;
+    }
+
+    mergeSortRec(list, temp_values, 0, list->size - 1, compare_func, delay_func, mainframe, column_graph);
+
+    free(temp_values);
 }
+
 
 void List_sort(List* list, ListSortType sortType, CompareFunc compare_func, DelayFunc delay_func , MainFrame* mainframe, ColumnGraph* column_graph) {
     switch (sortType) {
@@ -393,10 +393,10 @@ void List_sort(List* list, ListSortType sortType, CompareFunc compare_func, Dela
             List_sortBubble(list, compare_func, delay_func, mainframe, column_graph);
             break;
         case LIST_SORT_TYPE_QUICK:
-            List_sortQuick(list, compare_func);
+            List_sortQuick(list, compare_func, delay_func, mainframe, column_graph);
             break;
         case LIST_SORT_TYPE_MERGE:
-            List_sortMerge(list, compare_func);
+            List_sortMerge(list, compare_func, delay_func, mainframe, column_graph);
             break;
         default:
             log_message(LOG_LEVEL_WARN, "Unknown ListSortType: %d", sortType);
@@ -472,7 +472,6 @@ void *ListIterator_next(ListIterator *iterator) {
 int ListIterator_index(ListIterator *iterator) {
     return iterator->index - 1;
 }
-
 
 char* ListSortType_toString(ListSortType sortType) {
     switch (sortType) {

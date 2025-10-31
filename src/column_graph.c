@@ -136,7 +136,9 @@ void ColumnGraph_resetContainer(ColumnGraph* graph) {
     ListIterator* it = ListIterator_new(graph->bars);
     while (ListIterator_hasNext(it)) {
         ColumnGraphBar* bar = (ColumnGraphBar*)ListIterator_next(it);
-        FlexContainer_addElement(graph->container, bar->element, 1.f, 1.f, -1.f);
+        if (bar) {
+            FlexContainer_addElement(graph->container, bar->element, 1.f, 1.f, -1.f);
+        }
     }
     ListIterator_destroy(it);
 }

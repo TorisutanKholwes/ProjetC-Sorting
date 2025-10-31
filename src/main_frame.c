@@ -133,7 +133,10 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
         ListIterator* graphIt = ListIterator_new(graph->bars);
         while (ListIterator_hasNext(graphIt)) {
             ColumnGraphBar* bar = ListIterator_next(graphIt);
-            List_push(self->elements, bar->element);
+            if (bar) {
+                List_push(self->elements, bar->element);
+            }
+
         }
         ListIterator_destroy(graphIt);
         FlexContainer_layout(graph->container);
@@ -582,7 +585,7 @@ static void MainFrame_DelaySort(MainFrame* self, ColumnGraph* graph, ColumnGraph
     MainFrame_render(self->app->renderer, self);
     SDL_RenderPresent(self->app->renderer);
     actual->element->data.box->background = actual->color;
-    SDL_Delay(16);
+    SDL_Delay(7);
 }
 
 static void MainFrame_onEnter(Input* input, SDL_Event* evt, MainFrame* self) {

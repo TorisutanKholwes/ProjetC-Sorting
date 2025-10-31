@@ -17,6 +17,8 @@ struct ColumnGraph {
     Input* input;
     bool hovered;
 
+    bool paused;
+
     ListSortType sort_type;
 
     ColumnGraphType type;

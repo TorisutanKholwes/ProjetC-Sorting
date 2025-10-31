@@ -10,6 +10,7 @@
 #include "layout.h"
 #include "list.h"
 #include "logger.h"
+#include "sort.h"
 #include "utils.h"
 
 static void ColumnGraph_handleMouseMotion(Input* input, SDL_Event* evt, ColumnGraph* graph);

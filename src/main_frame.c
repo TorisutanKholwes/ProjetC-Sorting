@@ -34,7 +34,7 @@ static void MainFrame_onRuneS(Input* input, SDL_Event* evt, MainFrame* self);
 static void MainFrame_onRuneP(Input* input, SDL_Event* evt, MainFrame* self);
 static void MainFrame_onRuneM(Input* input, SDL_Event* evt, MainFrame* self);
 static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self);
-static void MainFrame_DelaySort(MainFrame* self, ColumnGraph* graph, ColumnGraphBar* actual);
+static void MainFrame_DelaySort(MainFrame* self, ColumnGraph* graph, ColumnGraphBar* actual, ColumnGraphBar* second);
 static void MainFrame_onEnter(Input* input, SDL_Event* evt, MainFrame* self);
 static void MainFrame_onClick(Input* input, SDL_Event* evt, MainFrame* self);
 static bool MainFrame_createPopup(MainFrame* self, void* value, ColumnGraphType type);
@@ -52,6 +52,10 @@ static void MainFrame_hideGraphInfo(MainFrame* self);
 static void MainFrame_onRuneO(Input* input, SDL_Event* evt, MainFrame* self);
 static bool MainFrame_isGraphSorting(MainFrame* self);
 static void MainFrame_onRuneB(Input* input, SDL_Event* evt, MainFrame* self);
+static void MainFrame_showTempText(MainFrame* self, const char* text);
+static void MainFrame_showTempTextf(MainFrame* self, const char* format, ...);
+static void MainFrame_showCustomSizeTempText(MainFrame* self, int font_size, const char* text);
+static void MainFrame_showCustomSizeTempTextf(MainFrame* self, int font_size, const char* format, ...);
 
 MainFrame* MainFrame_new(App* app) {
     MainFrame* self = calloc(1, sizeof(MainFrame));
@@ -84,7 +88,7 @@ MainFrame* MainFrame_new(App* app) {
     self->selected_graph_index = 0;
     self->ui_mutex = SDL_CreateMutex();
     self->graph_style = GRAPH_RAINBOW;
-    self->graph_mutexes = calloc(self->graph_count, sizeof(SDL_mutex*));
+    self->graph_mutexes = calloc(self->graph_count, sizeof(SDL_mutex *));
     for (int i = 0; i < self->graph_count; i++) {
         self->graph_mutexes[i] = SDL_CreateMutex();
         self->graph[i] = ColumnGraph_new(w, h, Position_new(0, 0), app->input, self, GRAPH_TYPE_INT,
@@ -219,7 +223,7 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
             List_push(self->elements, Element_fromBox(box, NULL));
         }
     }
-    Image* help_image = Image_load(self->app , "help_white.svg", Position_new(0, 0), false);
+    Image* help_image = Image_load(self->app, "help_white.svg", Position_new(0, 0), false);
     Image_setRatio(help_image, 0.05);
 
     List_push(self->elements, Element_fromImage(help_image, "help_image"));
@@ -448,7 +452,7 @@ static bool MainFrame_createPopup(MainFrame* self, void* value, ColumnGraphType 
                                      TTF_STYLE_NORMAL),
                                  Position_new(popupX + 10, popupY),
                                  false,
-                                    format, value
+                                 format, value
     );
     Size txtSize = Text_getSize(popupLabel);
     if (txtSize.width + 20 > popupWidth) {
@@ -492,7 +496,7 @@ static void MainFrame_updateGraphs(MainFrame* self, int old_count, int old_bar_c
         ColumnGraph_destroy(self->graph[i]);
     }
     self->graph = realloc(self->graph, self->graph_count * sizeof(ColumnGraph *));
-    self->graph_mutexes = realloc(self->graph_mutexes, self->graph_count * sizeof(SDL_mutex*));
+    self->graph_mutexes = realloc(self->graph_mutexes, self->graph_count * sizeof(SDL_mutex *));
     int w, h;
     SDL_GetWindowSize(self->app->window, &w, &h);
     for (int i = 0; i < self->graph_count; i++) {
@@ -516,11 +520,11 @@ static void MainFrame_updateGraphs(MainFrame* self, int old_count, int old_bar_c
         if (values) {
             ColumnGraph_initBarsColored(self->graph[i], self->bar_count, values, colors);
             ColumnGraph_setSortType(self->graph[i], old_graphs_sort_types[i]);
-            safe_free((void**)&values);
+            safe_free((void **) &values);
             for (int j = 0; j < old_graphs_lengths[i]; j++) {
                 Color_destroy(colors[j]);
             }
-            safe_free((void**)&colors);
+            safe_free((void **) &colors);
         } else {
             ColumnGraph_initBarsIncrement(self->graph[i], self->bar_count, self->graph_style);
         }
@@ -579,7 +583,7 @@ static void MainFrame_quitApp(Input* input, SDL_Event* evt, Button* button) {
 }
 
 static int MainFrame_sortGraphThread(void* ptr) {
-    SortThreadArg* arg = (SortThreadArg*) ptr;
+    SortThreadArg* arg = (SortThreadArg *) ptr;
     if (!arg || !arg->self) return 1;
     MainFrame* self = arg->self;
     int graph_index = arg->graph_index;
@@ -599,7 +603,7 @@ static int MainFrame_sortGraphThread(void* ptr) {
     self->graph_sorting[graph_index] = false;
     self->graph[graph_index]->sort_in_progress = false;
 
-    safe_free((void**)&arg);
+    safe_free((void **) &arg);
     return 0;
 }
 
@@ -608,11 +612,12 @@ static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self) {
     UNUSED(input);
     UNUSED(evt);
     int graph_to_sort = self->all_selected ? self->graph_count : 1;
-    SDL_Thread** threads = calloc(graph_to_sort, sizeof(SDL_Thread*));
+    SDL_Thread** threads = calloc(graph_to_sort, sizeof(SDL_Thread *));
 
     for (int i = 0; i < graph_to_sort; i++) {
         int idx = self->all_selected ? i : self->selected_graph_index;
         if (List_isSorted(self->graph[idx]->bars, ColumnGraphBar_compare)) {
+            MainFrame_showTempTextf(self, "Graph %d is already sorted!", idx + 1);
             continue;
         }
         SortThreadArg* arg = calloc(1, sizeof(SortThreadArg));
@@ -620,13 +625,22 @@ static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self) {
             log_message(LOG_LEVEL_WARN, "Cannot start sort thread %d due to memory allocation failure", i);
             continue;
         }
+        if (self->graph[idx]->sort_type == LIST_SORT_TYPE_BITONIC && !
+            is_power_of_two(List_size(self->graph[idx]->bars))) {
+            log_message(LOG_LEVEL_WARN,
+                        "Cannot sort graph %d with Bitonic sort as the number of bars is not a power of two", idx+1);
+            MainFrame_showCustomSizeTempTextf(self, 22,
+                                   "Graph %d : Bitonic sort requires the number of bars to be a power of two!", idx+1);
+            safe_free((void **) &arg);
+            continue;
+        }
         arg->self = self;
         arg->graph_index = idx;
-        threads[i] = SDL_CreateThread(MainFrame_sortGraphThread, "SortThread", (void*) arg);
+        threads[i] = SDL_CreateThread(MainFrame_sortGraphThread, "SortThread", (void *) arg);
     }
 }
 
-static void MainFrame_DelaySort(MainFrame* self, ColumnGraph* graph, ColumnGraphBar* actual) {
+static void MainFrame_DelaySort(MainFrame* self, ColumnGraph* graph, ColumnGraphBar* actual, ColumnGraphBar* second) {
     if (!graph) {
         log_message(LOG_LEVEL_WARN, "No graph to sort");
         return;
@@ -635,10 +649,16 @@ static void MainFrame_DelaySort(MainFrame* self, ColumnGraph* graph, ColumnGraph
     if (actual) {
         actual->element->data.box->background = COLOR_WHITE;
     }
+    if (second) {
+        second->element->data.box->background = COLOR_WHITE;
+    }
     ColumnGraph_resetContainer(graph);
     SDL_Delay(7);
     if (actual) {
         actual->element->data.box->background = Color_copy(actual->color);
+    }
+    if (second) {
+        second->element->data.box->background = Color_copy(second->color);
     }
     while (graph->paused) {
         SDL_Delay(1);
@@ -687,7 +707,7 @@ static void MainFrame_loadFileCallback(MainFrame* self, const char* filename) {
     }
     int values_len;
     fscanf(file, "%d", &values_len);
-    void** values = calloc(values_len, sizeof(void*));
+    void** values = calloc(values_len, sizeof(void *));
     if (!values) {
         error("Failed to allocate memory for values");
         fclose(file);
@@ -695,7 +715,11 @@ static void MainFrame_loadFileCallback(MainFrame* self, const char* filename) {
     }
     char typeString[64];
     fscanf(file, "%s", typeString);
-    ColumnGraphType type = String_equals(typeString, "int") ? GRAPH_TYPE_INT : String_equals(typeString, "string") ? GRAPH_TYPE_STRING : GRAPH_TYPE_INT;
+    ColumnGraphType type = String_equals(typeString, "int")
+                               ? GRAPH_TYPE_INT
+                               : String_equals(typeString, "string")
+                                     ? GRAPH_TYPE_STRING
+                                     : GRAPH_TYPE_INT;
     char* format;
     switch (type) {
         case GRAPH_TYPE_INT:
@@ -750,16 +774,16 @@ static void MainFrame_loadFile(Input* input, SDL_Event* evt, Button* button) {
         Container* parent = button->parent;
         if (parent->parent) {
             MainFrame* mainFrame = parent->parent;
-            const char* filterPatterns[1] = { "*.txt" };
+            const char* filterPatterns[1] = {"*.txt"};
             const char* filePath = tinyfd_openFileDialog("Open data File",
-                "",
-                1,
-                filterPatterns,
-                "Text Files",
-                0
-                );
+                                                         "",
+                                                         1,
+                                                         filterPatterns,
+                                                         "Text Files",
+                                                         0
+            );
             if (filePath) {
-                const char* paths[1] = { filePath };
+                const char* paths[1] = {filePath};
                 MainFrame_loadFileCallback(mainFrame, paths[0]);
             }
         }
@@ -775,9 +799,11 @@ static void MainFrame_onClick(Input* input, SDL_Event* evt, MainFrame* self) {
 
     if (self->graph_count > 0) {
         for (int i = 0; i < self->graph_count; i++) {
-            if (i ==  self->selected_graph_index) continue;
+            if (i == self->selected_graph_index) continue;
             ColumnGraph* graph = self->graph[i];
-            SDL_FRect focus_graph_rect = { graph->position->x, graph->position->y, graph->size.width, graph->size.height };
+            SDL_FRect focus_graph_rect = {
+                graph->position->x, graph->position->y, graph->size.width, graph->size.height
+            };
             if (Input_mouseInRect(self->app->input, focus_graph_rect)) {
                 if (self->popup) {
                     ColumnGraph_removeHovering(self->graph[self->selected_graph_index]);
@@ -794,7 +820,9 @@ static void MainFrame_onClick(Input* input, SDL_Event* evt, MainFrame* self) {
     Image* image_help = Element_getById(self->elements, "help_image")->data.image;
     Size size_help_image = Image_getSize(image_help);
     Position* position_help_image = image_help->position;
-    SDL_FRect help_rect = {position_help_image->x,position_help_image->y, size_help_image.width, size_help_image.height};
+    SDL_FRect help_rect = {
+        position_help_image->x, position_help_image->y, size_help_image.width, size_help_image.height
+    };
     if (Input_mouseInRect(self->app->input, help_rect)) {
         self->hovered_help = false;
         MainFrame_updateHelpImage(self);
@@ -837,7 +865,7 @@ static void MainFrame_onMouseMove(Input* input, SDL_Event* evt, MainFrame* self)
     if (!self || self->showSettings || self->graph_info || MainFrame_isGraphSorting(self)) return;
     Image* img = Element_getById(self->elements, "help_image")->data.image;
     Size imgSize = Image_getSize(img);
-    SDL_FRect rect = { img->position->x, img->position->y, imgSize.width, imgSize.height };
+    SDL_FRect rect = {img->position->x, img->position->y, imgSize.width, imgSize.height};
     if (Input_mouseInRect(self->app->input, rect)) {
         self->hovered_help = true;
         Image_changePath(img, self->app, "help_hover.svg");
@@ -896,13 +924,14 @@ static void MainFrame_showGraphInfo(MainFrame* self, int index, ColumnGraph* gra
     float graph_info_width = 350;
     float graph_info_height = 250;
     SDL_Renderer* renderer = self->app->renderer;
-    self->graph_info = Container_new(w / 2, h / 2, graph_info_width, graph_info_height, true, Color_copy(self->app->theme->background), self);
+    self->graph_info = Container_new(w / 2, h / 2, graph_info_width, graph_info_height, true,
+                                     Color_copy(self->app->theme->background), self);
     Box_setBorder(self->graph_info->box, 4, Color_copy(COLOR_WHITE));
     Position* graph_info_pos = Container_getPosition(self->graph_info);
     Text* graph_title = Text_newf(renderer, TextStyle_new(
-                                   ResourceManager_getDefaultBoldFont(self->app->manager, 24),
-                                   24, COLOR_WHITE, TTF_STYLE_NORMAL),
-                                   POSITION_NULL, false, "Graph %d Info", index + 1);
+                                      ResourceManager_getDefaultBoldFont(self->app->manager, 24),
+                                      24, COLOR_WHITE, TTF_STYLE_NORMAL),
+                                  POSITION_NULL, false, "Graph %d Info", index + 1);
     Size title_size = Text_getSize(graph_title);
     Text_setPosition(graph_title, graph_info_pos->x + (graph_info_width - title_size.width) / 2,
                      graph_info_pos->y + 10);
@@ -914,30 +943,31 @@ static void MainFrame_showGraphInfo(MainFrame* self, int index, ColumnGraph* gra
     float y = graph_info_pos->y + 60;
 
     Text* type_graph_text = Text_newf(renderer, base_text_style,
-        Position_new(graph_info_pos->x + 10, y),
-        false,
-        "Graph Type: %s", ColumnGraph_getTypeName(graph->type));
+                                      Position_new(graph_info_pos->x + 10, y),
+                                      false,
+                                      "Graph Type: %s", ColumnGraph_getTypeName(graph->type));
 
     y += 30;
 
     Text* bar_count_text = Text_newf(renderer, TextStyle_deepCopy(base_text_style),
-        Position_new(graph_info_pos->x + 10, y),
-        false,
-        "Bar Count: %d", graph->bars_count);
+                                     Position_new(graph_info_pos->x + 10, y),
+                                     false,
+                                     "Bar Count: %d", graph->bars_count);
 
     y += 30;
 
     Text* is_sorted_text = Text_newf(renderer, TextStyle_deepCopy(base_text_style),
-        Position_new(graph_info_pos->x + 10, y),
-        false,
-        "Is Sorted: %s", List_isSorted(graph->bars, ColumnGraphBar_compare) ? "Yes" : "No");
+                                     Position_new(graph_info_pos->x + 10, y),
+                                     false,
+                                     "Is Sorted: %s",
+                                     List_isSorted(graph->bars, ColumnGraphBar_compare) ? "Yes" : "No");
 
-    y+= 30;
+    y += 30;
 
     Text* sort_type_text = Text_newf(renderer, TextStyle_deepCopy(base_text_style),
-        Position_new(graph_info_pos->x + 10, y),
-        false,
-        "Sort Type: %s", ListSortType_toString(graph->sort_type));
+                                     Position_new(graph_info_pos->x + 10, y),
+                                     false,
+                                     "Sort Type: %s", ListSortType_toString(graph->sort_type));
 
     Container_addChild(self->graph_info, Element_fromText(graph_title, NULL));
     Container_addChild(self->graph_info, Element_fromText(type_graph_text, NULL));
@@ -947,7 +977,6 @@ static void MainFrame_showGraphInfo(MainFrame* self, int index, ColumnGraph* gra
 
     Position_destroy(graph_info_pos);
     MainFrame_addElements(self, self->app);
-
 }
 
 static void MainFrame_hideGraphInfo(MainFrame* self) {
@@ -961,40 +990,19 @@ static void MainFrame_onRuneO(Input* input, SDL_Event* evt, MainFrame* self) {
     if (!self || self->showSettings || self->graph_info || MainFrame_isGraphSorting(self)) return;
     UNUSED(input);
     UNUSED(evt);
-    Element* copy_temp_element = NULL;;
-    if (self->temp_element) {
-        copy_temp_element = self->temp_element;
-        self->temp_element = NULL;
-    }
     int graph_count = self->all_selected ? self->graph_count : 1;
-    ListSortType newSortType = modulo(self->graph[self->all_selected ? 0 : self->selected_graph_index]->sort_type + 1, LIST_SORT_TYPE_COUNT);
+    ListSortType newSortType = modulo(self->graph[self->all_selected ? 0 : self->selected_graph_index]->sort_type + 1,
+                                      LIST_SORT_TYPE_COUNT);
     for (int i = 0; i < graph_count; i++) {
         int idx = self->all_selected ? i : self->selected_graph_index;
         ColumnGraph* graph = self->graph[idx];
         ColumnGraph_setSortType(graph, newSortType);
     }
-    int w, h;
-    SDL_GetWindowSize(self->app->window, &w, &h);
-    float x = self->all_selected ? w / 2 : self->graph[self->selected_graph_index]->position->x + (self->graph[self->selected_graph_index]->size.width / 2);
-    float y = self->all_selected ? 50 : self->graph[self->selected_graph_index]->position->y + 50;
-
-    Text* temp_new_sort_text = Text_newf(self->app->renderer,
-        TextStyle_new(
-            ResourceManager_getDefaultBoldFont(self->app->manager, 24),
-            24, COLOR_YELLOW, TTF_STYLE_BOLD),
-        Position_new(x, y),
-        true,
-        "Sort Type: %s", ListSortType_toString(newSortType));
-    self->temp_element = Element_fromText(temp_new_sort_text, NULL);
-    Timer_start(self->timer);
-    MainFrame_addElements(self, self->app);
-    if (copy_temp_element) {
-        Element_destroy(copy_temp_element);
-    }
+    MainFrame_showTempTextf(self, "Sort Type: %s", ListSortType_toString(newSortType));
 }
 
 static bool MainFrame_isGraphSorting(MainFrame* self) {
-    for (int i = 0; i <self->graph_count; i++) {
+    for (int i = 0; i < self->graph_count; i++) {
         if (self->graph_sorting[i]) {
             return true;
         }
@@ -1014,4 +1022,57 @@ static void MainFrame_onRuneB(Input* input, SDL_Event* evt, MainFrame* self) {
             graph->paused = !graph->paused;
         }
     }
+}
+
+static void MainFrame_showTempText(MainFrame* self, const char* text) {
+    MainFrame_showCustomSizeTempText(self, 24, text);
+}
+
+static void MainFrame_showTempTextf(MainFrame* self, const char* format, ...) {
+    if (!self || !format) return;
+    va_list args;
+    va_start(args, format);
+    char buffer[512];
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+    MainFrame_showTempText(self, buffer);
+}
+
+static void MainFrame_showCustomSizeTempText(MainFrame* self, int font_size, const char* text) {
+    if (!self || !text) return;
+    Element* copy_temp_element = NULL;;
+    if (self->temp_element) {
+        copy_temp_element = self->temp_element;
+        self->temp_element = NULL;
+    }
+    int w, h;
+    SDL_GetWindowSize(self->app->window, &w, &h);
+    float x = self->all_selected
+                  ? w / 2
+                  : self->graph[self->selected_graph_index]->position->x + (
+                        self->graph[self->selected_graph_index]->size.width / 2);
+    float y = self->all_selected ? 50 : self->graph[self->selected_graph_index]->position->y + 50;
+
+    Text* temp_new_sort_text = Text_new(self->app->renderer,
+                                         TextStyle_new(
+                                             ResourceManager_getDefaultBoldFont(self->app->manager, font_size),
+                                             font_size, COLOR_YELLOW, TTF_STYLE_BOLD),
+                                         Position_new(x, y),
+                                         true, text);
+    self->temp_element = Element_fromText(temp_new_sort_text, NULL);
+    Timer_start(self->timer);
+    MainFrame_addElements(self, self->app);
+    if (copy_temp_element) {
+        Element_destroy(copy_temp_element);
+    }
+}
+
+static void MainFrame_showCustomSizeTempTextf(MainFrame* self, int font_size, const char* format, ...) {
+    if (!self || !format) return;
+    va_list args;
+    va_start(args, format);
+    char buffer[512];
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+    MainFrame_showCustomSizeTempText(self, font_size, buffer);
 }

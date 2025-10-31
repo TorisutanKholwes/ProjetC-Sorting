@@ -172,4 +172,4 @@ typedef bool (*ColumnsHoverFunc)(void* data, void* value, ColumnGraphType type);
 /** @brief Function pointer for comparing two elements */
 typedef int (*CompareFunc)(const void* a, const void* b);
 
-typedef void (*DelayFunc)(MainFrame* self, ColumnGraph* graph, ColumnGraphBar* actual);
+typedef void (*DelayFunc)(MainFrame* self, ColumnGraph* graph, ColumnGraphBar* actual, ColumnGraphBar* second);

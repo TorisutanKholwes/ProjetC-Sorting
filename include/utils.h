@@ -60,3 +60,5 @@ long* voidToLongArray(void** arr, int len);
 
 void** longToVoidArray(const long* arr, int len);
 void** intToVoidArray(const int* arr, int len);
+
+bool is_power_of_two(int n);

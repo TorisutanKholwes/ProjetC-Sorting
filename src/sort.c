@@ -6,11 +6,6 @@
 
 #include "list.h"
 #include "logger.h"
-
-static ListNode* partitionQS(ListNode* low, ListNode* high, CompareFunc compare_func, SDL_mutex* gm, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph);
-static void quickSortRec(ListNode* low, ListNode* high, CompareFunc compare_func, SDL_mutex* gm, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph);
-
-
 int List_defaultCompare(const void* a, const void* b) {
     return (long)a - (long)b;
 }
@@ -53,7 +48,7 @@ void List_sortBubble(List* list, CompareFunc compare_func, SDL_mutex* gm, DelayF
                 next->value = temp;
                 SDL_UnlockMutex(gm);
                 if (delay_func) {
-                    delay_func(mainframe, column_graph, a);
+                    delay_func(mainframe, column_graph, a, b);
                 }
                 swapped = true;
             }
@@ -74,7 +69,7 @@ static ListNode* partitionQS(ListNode* low, ListNode* high, CompareFunc compare_
             j->value = tmp;
             SDL_UnlockMutex(gm);
             if (delay_func) {
-                delay_func(mainframe, column_graph, j->value);
+                delay_func(mainframe, column_graph, j->value, i->value);
             }
         }
     }
@@ -85,7 +80,7 @@ static ListNode* partitionQS(ListNode* low, ListNode* high, CompareFunc compare_
     high->value = tmp;
     SDL_UnlockMutex(gm);
     if (delay_func) {
-        delay_func(mainframe, column_graph, i->value);
+        delay_func(mainframe, column_graph, i->value, high->value);
     }
     return i;
 }
@@ -94,6 +89,7 @@ static void quickSortRec(ListNode* low, ListNode* high, CompareFunc compare_func
     if (!low || !high) return;
     if (low != high && low != high->next) {
         ListNode* p = partitionQS(low, high, compare_func, gm, delay_func, mainframe, column_graph);
+
         quickSortRec(low, p->prev, compare_func, gm, delay_func, mainframe, column_graph);
         quickSortRec(p->next, high, compare_func, gm, delay_func, mainframe, column_graph);
     }
@@ -126,7 +122,6 @@ void List_sortQuick(List* list, CompareFunc compare_func, SDL_mutex* gm, DelayFu
     new_last->next = list->head;
     list->head->next = new_first;
     list->head->prev = new_last;
-
 }
 
 static void merge(List* list, void** temp_values, int left, int mid, int right, CompareFunc compare_func, SDL_mutex* gm, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph) {
@@ -143,13 +138,13 @@ static void merge(List* list, void** temp_values, int left, int mid, int right, 
             SDL_LockMutex(gm);
             List_set(list, k, temp_values[i]);
             SDL_UnlockMutex(gm);
-            if (delay_func) delay_func(mainframe, column_graph, temp_values[i]);
+            if (delay_func) delay_func(mainframe, column_graph, temp_values[i], NULL);
             i++;
         } else {
             SDL_LockMutex(gm);
             List_set(list, k, temp_values[j]);
             SDL_UnlockMutex(gm);
-            if (delay_func) delay_func(mainframe, column_graph, temp_values[j]);
+            if (delay_func) delay_func(mainframe, column_graph, temp_values[j], NULL);
             j++;
         }
         k++;
@@ -159,7 +154,7 @@ static void merge(List* list, void** temp_values, int left, int mid, int right, 
         SDL_LockMutex(gm);
         List_set(list, k, temp_values[i]);
         SDL_UnlockMutex(gm);
-        if (delay_func) delay_func(mainframe, column_graph, temp_values[i]);
+        if (delay_func) delay_func(mainframe, column_graph, temp_values[i], NULL);
         i++;
         k++;
     }
@@ -168,7 +163,7 @@ static void merge(List* list, void** temp_values, int left, int mid, int right, 
         SDL_LockMutex(gm);
         List_set(list, k, temp_values[j]);
         SDL_UnlockMutex(gm);
-        if (delay_func) delay_func(mainframe, column_graph, temp_values[j]);
+        if (delay_func) delay_func(mainframe, column_graph, temp_values[j], NULL);
         j++;
         k++;
     }
@@ -217,7 +212,7 @@ void List_sortInsertion(List* list, CompareFunc compare_func, SDL_mutex* gm, Del
             List_set(list, j + 1, value_to_move);
             SDL_UnlockMutex(gm);
             if (delay_func) {
-                delay_func(mainframe, column_graph, value_to_move);
+                delay_func(mainframe, column_graph, value_to_move, key);
             }
             j = j - 1;
         }
@@ -225,7 +220,7 @@ void List_sortInsertion(List* list, CompareFunc compare_func, SDL_mutex* gm, Del
         List_set(list, j + 1, key);
         SDL_UnlockMutex(gm);
         if (delay_func) {
-            delay_func(mainframe, column_graph, key);
+            delay_func(mainframe, column_graph, key, NULL);
         }
     }
 }
@@ -241,7 +236,7 @@ static void bitonicMerge(List* list, int low, int count, int direction, CompareF
                 List_swap(list, i, i + k);
                 SDL_UnlockMutex(gm);
                 if (delay_func) {
-                    delay_func(mainframe, column_graph, val1);
+                    delay_func(mainframe, column_graph, val1, val2);
                 }
             }
         }
@@ -283,7 +278,7 @@ void List_sortBogo(List* list, CompareFunc compare_func, SDL_mutex* gm, DelayFun
         List_shuffle(list);
         SDL_UnlockMutex(gm);
         if (delay_func) {
-            delay_func(mainframe, column_graph, NULL);
+            delay_func(mainframe, column_graph, NULL, NULL);
         }
     }
 }
@@ -305,7 +300,7 @@ void List_sortSelection(List* list, CompareFunc compare_func, SDL_mutex* gm, Del
             List_swap(list, i, min);
             SDL_UnlockMutex(gm);
             if (delay_func) {
-                delay_func(mainframe, column_graph, List_get(list, i));
+                delay_func(mainframe, column_graph, List_get(list, i), List_get(list, min));
             }
         }
     }

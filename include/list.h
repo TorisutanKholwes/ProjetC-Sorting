@@ -46,6 +46,8 @@ void List_sort(List* list, ListSortType sortType, CompareFunc compare_func, Dela
 bool List_isSorted(List* list, CompareFunc compare_func);
 void List_shuffle(List* list);
 
+char* ListSortType_toString(ListSortType sortType);
+
 ListIterator* ListIterator_new(List* list);
 void ListIterator_destroy(ListIterator* iterator);
 bool ListIterator_hasNext(ListIterator* iterator);

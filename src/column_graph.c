@@ -27,6 +27,7 @@ ColumnGraph* ColumnGraph_new(float width, float height, Position* position, Inpu
     graph->type = type;
     graph->bars_count = 0;
     graph->parent = parent;
+    graph->sort_type = LIST_SORT_TYPE_BUBBLE;
     graph->bars = List_create();
     graph->container = FlexContainer_new(position->x, position->y, width, height);
     graph->onHover = onHover;
@@ -140,9 +141,9 @@ void ColumnGraph_resetContainer(ColumnGraph* graph) {
     ListIterator_destroy(it);
 }
 
-void ColumnGraph_sortGraph(ColumnGraph* graph, ListSortType sort_type, DelayFunc delay_func, MainFrame* main_frame) {
+void ColumnGraph_sortGraph(ColumnGraph* graph, DelayFunc delay_func, MainFrame* main_frame) {
     if (!graph) return;
-    List_sort(graph->bars, sort_type, ColumnGraphBar_compare, delay_func, main_frame, graph);
+    List_sort(graph->bars, graph->sort_type, ColumnGraphBar_compare, delay_func, main_frame, graph);
     FlexContainer_clear(graph->container);
     ListIterator* it = ListIterator_new(graph->bars);
     while (ListIterator_hasNext(it)) {
@@ -220,6 +221,11 @@ void ColumnGraph_resetBars(ColumnGraph* graph) {
     }
     ListIterator_destroy(it);
     List_clear(graph->bars);
+}
+
+void ColumnGraph_setSortType(ColumnGraph* graph, ListSortType sort_type) {
+    if (!graph) return;
+    graph->sort_type = sort_type;
 }
 
 static float ColumnGraphBar_calculateBarHeight(void* value, float height, void* max_value, ColumnGraphType type) {

@@ -15,6 +15,10 @@ struct MainFrame {
     ColumnGraphStyle graph_style;
     Container* popup;
     Container* graph_info;
+
+    Element* temp_element;
+    Timer* timer;
+
     int graph_count;
     int bar_count;
     int selected_graph_index;

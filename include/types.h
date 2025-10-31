@@ -140,7 +140,8 @@ typedef enum ColumnGraphType {
 typedef enum ListSortType {
     LIST_SORT_TYPE_BUBBLE,
     LIST_SORT_TYPE_QUICK,
-    LIST_SORT_TYPE_MERGE
+    LIST_SORT_TYPE_MERGE,
+    LIST_SORT_TYPE_COUNT
 } ListSortType;
 
 

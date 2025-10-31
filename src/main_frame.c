@@ -24,6 +24,7 @@
 #include "select.h"
 #include "style.h"
 #include "text.h"
+#include "timer.h"
 #include "tinyfiledialogs.h"
 
 static void MainFrame_addElements(MainFrame* self, App* app);
@@ -68,6 +69,8 @@ static void MainFrame_showGraphInfo(MainFrame* self, int index, ColumnGraph* gra
 
 static void MainFrame_hideGraphInfo(MainFrame* self);
 
+static void MainFrame_onRuneO(Input* input, SDL_Event* evt, MainFrame* self);
+
 MainFrame* MainFrame_new(App* app) {
     MainFrame* self = calloc(1, sizeof(MainFrame));
     if (!self) {
@@ -94,6 +97,8 @@ MainFrame* MainFrame_new(App* app) {
         return NULL;
     }
     self->bar_count = 50;
+    self->timer = Timer_new();
+    self->temp_element = NULL;
     self->selected_graph_index = 0;
     self->graph_style = GRAPH_RAINBOW;
     for (int i = 0; i < self->graph_count; i++) {
@@ -248,6 +253,9 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
     if (self->graph_info) {
         List_push(self->elements, Element_fromContainer(self->graph_info, "graph_info"));
     }
+    if (self->temp_element) {
+        List_push(self->elements, self->temp_element);
+    }
 }
 
 void MainFrame_destroy(MainFrame* self) {
@@ -260,6 +268,8 @@ void MainFrame_destroy(MainFrame* self) {
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_A, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_RETURN, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_Q, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_I, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_O, self);
 
     Input_removeOneEventHandler(self->app->input, SDL_MOUSEBUTTONDOWN, self);
     Input_removeOneEventHandler(self->app->input, SDL_MOUSEMOTION, self);
@@ -300,6 +310,16 @@ void MainFrame_update(MainFrame* self) {
             Element_setPosition(child, x, y);
         }
     }
+    if (self->timer && self->timer->started && Timer_getTicks(self->timer) >= 1500) {
+        if (self->temp_element) {
+            Element* copy_temp_element = self->temp_element;
+            self->temp_element = NULL;
+            MainFrame_addElements(self, self->app);
+            Element_destroy(copy_temp_element);
+        }
+        Timer_stop(self->timer);
+        return;
+    }
 
     Element_updateList(self->elements);
 }
@@ -315,6 +335,7 @@ void MainFrame_focus(MainFrame* self) {
     Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_RETURN, (EventHandlerFunc) MainFrame_onEnter, self);
     Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_Q, (EventHandlerFunc) MainFrame_onRuneA, self);
     Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_I, (EventHandlerFunc) MainFrame_onRuneI, self);
+    Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_O, (EventHandlerFunc) MainFrame_onRuneO, self);
 
     Input_addEventHandler(self->app->input, SDL_MOUSEBUTTONDOWN, (EventHandlerFunc) MainFrame_onClick, self);
     Input_addEventHandler(self->app->input, SDL_MOUSEMOTION, (EventHandlerFunc) MainFrame_onMouseMove, self);
@@ -331,6 +352,8 @@ void MainFrame_unfocus(MainFrame* self) {
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_A, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_RETURN, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_Q, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_I, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_O, self);
 
     Input_removeOneEventHandler(self->app->input, SDL_MOUSEBUTTONDOWN, self);
     Input_removeOneEventHandler(self->app->input, SDL_MOUSEMOTION, self);
@@ -527,20 +550,20 @@ static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self) {
     if (!self || self->showSettings || self->graph_info) return;
     UNUSED(input);
     UNUSED(evt);
-    if (!self || self->showSettings) return;
+    if (self->showSettings) return;
     bool hasPopup = self->popup != NULL;
     if (self->all_selected) {
         for (int i = 0; i < self->graph_count; i++) {
             if (hasPopup) {
                 ColumnGraph_removeHovering(self->graph[i]);
             }
-            ColumnGraph_sortGraph(self->graph[i], LIST_SORT_TYPE_BUBBLE, MainFrame_DelaySort, self);
+            ColumnGraph_sortGraph(self->graph[i], MainFrame_DelaySort, self);
         }
     } else {
         if (hasPopup) {
             ColumnGraph_removeHovering(self->graph[self->selected_graph_index]);
         }
-        ColumnGraph_sortGraph(self->graph[self->selected_graph_index], LIST_SORT_TYPE_BUBBLE, MainFrame_DelaySort, self);
+        ColumnGraph_sortGraph(self->graph[self->selected_graph_index], MainFrame_DelaySort, self);
     }
     MainFrame_addElements(self, self->app);
 }
@@ -804,7 +827,7 @@ static void MainFrame_onRuneI(Input* input, SDL_Event* evt, MainFrame* self) {
 }
 
 static void MainFrame_showGraphInfo(MainFrame* self, int index, ColumnGraph* graph) {
-    if (!self || self->graph_info) return;
+    if (self->graph_info) return;
     UNUSED(index);
     UNUSED(graph);
     int w, h;
@@ -848,10 +871,18 @@ static void MainFrame_showGraphInfo(MainFrame* self, int index, ColumnGraph* gra
         false,
         "Is Sorted: %s", List_isSorted(graph->bars, ColumnGraphBar_compare) ? "Yes" : "No");
 
+    y+= 30;
+
+    Text* sort_type_text = Text_newf(renderer, TextStyle_deepCopy(base_text_style),
+        Position_new(graph_info_pos->x + 10, y),
+        false,
+        "Sort Type: %s", ListSortType_toString(graph->sort_type));
+
     Container_addChild(self->graph_info, Element_fromText(graph_title, NULL));
     Container_addChild(self->graph_info, Element_fromText(type_graph_text, NULL));
     Container_addChild(self->graph_info, Element_fromText(bar_count_text, NULL));
     Container_addChild(self->graph_info, Element_fromText(is_sorted_text, NULL));
+    Container_addChild(self->graph_info, Element_fromText(sort_type_text, NULL));
 
     Position_destroy(graph_info_pos);
     MainFrame_addElements(self, self->app);
@@ -859,8 +890,36 @@ static void MainFrame_showGraphInfo(MainFrame* self, int index, ColumnGraph* gra
 }
 
 static void MainFrame_hideGraphInfo(MainFrame* self) {
-    if (!self || !self->graph_info) return;
+    if (!self->graph_info) return;
     Container_destroy(self->graph_info);
     self->graph_info = NULL;
     MainFrame_addElements(self, self->app);
+}
+
+static void MainFrame_onRuneO(Input* input, SDL_Event* evt, MainFrame* self) {
+    if (!self || self->showSettings || self->graph_info || self->all_selected) return;
+    UNUSED(input);
+    UNUSED(evt);
+    Element* copy_temp_element = NULL;;
+    if (self->temp_element) {
+        copy_temp_element = self->temp_element;
+        self->temp_element = NULL;
+    }
+    ColumnGraph* graph = self->graph[self->selected_graph_index];
+    ListSortType newSortType = modulo(graph->sort_type + 1, LIST_SORT_TYPE_COUNT);
+    ColumnGraph_setSortType(graph, newSortType);
+
+    Text* temp_new_sort_text = Text_newf(self->app->renderer,
+        TextStyle_new(
+            ResourceManager_getDefaultBoldFont(self->app->manager, 24),
+            24, COLOR_YELLOW, TTF_STYLE_BOLD),
+        Position_new(graph->container->x + (graph->container->width/2), graph->container->y + 50),
+        true,
+        "Sort Type: %s", ListSortType_toString(newSortType));
+    self->temp_element = Element_fromText(temp_new_sort_text, NULL);
+    Timer_start(self->timer);
+    MainFrame_addElements(self, self->app);
+    if (copy_temp_element) {
+        Element_destroy(copy_temp_element);
+    }
 }

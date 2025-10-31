@@ -17,6 +17,8 @@ struct ColumnGraph {
     Input* input;
     bool hovered;
 
+    ListSortType sort_type;
+
     ColumnGraphType type;
 
     ColumnGraphStyle graph_style;
@@ -32,10 +34,11 @@ void ColumnGraph_initBars(ColumnGraph* graph, int bars_count, void** values, Col
 void ColumnGraph_initBarsIncrement(ColumnGraph* graph, int bars_count, ColumnGraphStyle style);
 void ColumnGraph_setGraphType(ColumnGraph* graph, ColumnGraphType type);
 void ColumnGraph_shuffleBars(ColumnGraph* graph);
-void ColumnGraph_sortGraph(ColumnGraph* graph, ListSortType sort_type, DelayFunc delay_func, MainFrame* main_frame);
+void ColumnGraph_sortGraph(ColumnGraph* graph, DelayFunc delay_func, MainFrame* main_frame);
 void ColumnGraph_removeHovering(ColumnGraph* graph);
 void ColumnGraph_renderBar(ColumnGraph* graph, int w, int h);
 void** ColumnGraph_getValues(ColumnGraph* graph, int* out_len);
+void ColumnGraph_setSortType(ColumnGraph* graph, ListSortType sort_type);
 void ColumnGraph_resetBars(ColumnGraph* graph);
 void ColumnGraph_resetContainer(ColumnGraph* graph);
 

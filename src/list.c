@@ -472,3 +472,17 @@ void *ListIterator_next(ListIterator *iterator) {
 int ListIterator_index(ListIterator *iterator) {
     return iterator->index - 1;
 }
+
+
+char* ListSortType_toString(ListSortType sortType) {
+    switch (sortType) {
+        case LIST_SORT_TYPE_BUBBLE:
+            return "Bubble Sort";
+        case LIST_SORT_TYPE_QUICK:
+            return "Quick Sort";
+        case LIST_SORT_TYPE_MERGE:
+            return "Merge Sort";
+        default:
+            return "Unknown Sort Type";
+    }
+}

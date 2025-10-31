@@ -393,7 +393,7 @@ void FlexContainer_layout(FlexContainer *container) {
                 break;
             case NO_FLEX_ALIGN:
                 cross_pos = is_row ? eltY : eltX;
-                while (cross_pos > (is_row ? container->height : container->width)) {
+                while (cross_pos >= (is_row ? container->height : container->width)) {
                     cross_pos -= (is_row ? container->height : container->width);
                 }
                 break;

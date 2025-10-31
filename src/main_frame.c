@@ -776,8 +776,7 @@ static void MainFrame_onWindowResize(Input* input, SDL_Event* evt, MainFrame* se
     UNUSED(input);
     UNUSED(evt);
     if (!self) return;
-    if (evt->window.type != SDL_WINDOWEVENT_RESIZED) return;
-    log_message(LOG_LEVEL_DEBUG, "Reisze");
+    if (evt->window.event != SDL_WINDOWEVENT_RESIZED) return;
     int w, h;
     SDL_GetWindowSize(self->app->window, &w, &h);
     if (w < WINDOW_WIDTH || h < WINDOW_HEIGHT) {

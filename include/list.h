@@ -25,12 +25,6 @@ struct ListIterator {
     size_t size;
 };
 
-enum ListSortType {
-    LIST_SORT_TYPE_BUBBLE,
-    LIST_SORT_TYPE_QUICK,
-    LIST_SORT_TYPE_MERGE
-};
-
 List* List_create();
 void List_destroy(List* list);
 void List_destroyWitValues(List* list, void (*destroyValueFunc)(void* value));

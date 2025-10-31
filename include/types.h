@@ -136,6 +136,14 @@ typedef enum ColumnGraphType {
     GRAPH_TYPE_STRING
 } ColumnGraphType;
 
+/** @brief Types of sorting for the list */
+typedef enum ListSortType {
+    LIST_SORT_TYPE_BUBBLE,
+    LIST_SORT_TYPE_QUICK,
+    LIST_SORT_TYPE_MERGE
+} ListSortType;
+
+
 // Types of func
 /** @brief Function pointer type for event handling */
 typedef void (*EventHandlerFunc)(Input* input, SDL_Event* event, void* data);

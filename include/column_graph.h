@@ -18,6 +18,7 @@ struct ColumnGraph {
     bool hovered;
 
     bool paused;
+    bool sort_in_progress;
 
     ListSortType sort_type;
 

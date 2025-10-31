@@ -335,6 +335,7 @@ void ColumnGraphBar_setValue(ColumnGraphBar* bar, void* value) {
 }
 
 static void ColumnGraph_handleMouseMotion(Input* input, SDL_Event* evt, ColumnGraph* graph) {
+    if (!graph || graph->sort_in_progress) return;
     UNUSED(evt);
     ListIterator* it = ListIterator_new(graph->bars);
     while (ListIterator_hasNext(it)) {

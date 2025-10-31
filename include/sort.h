@@ -16,4 +16,5 @@ void List_sortMerge(List* list, CompareFunc compare_func, SDL_mutex* gm, DelayFu
 void List_sortInsertion(List* list, CompareFunc compare_func, SDL_mutex* gm, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph);
 void List_sortBitonic(List* list, CompareFunc compare_func, SDL_mutex* gm, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph);
 void List_sortBogo(List* list, CompareFunc compare_func, SDL_mutex* gm, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph);
+void List_sortSelection(List* list, CompareFunc compare_func, SDL_mutex* gm, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph);
 const char* ListSortType_toString(ListSortType sortType);

@@ -593,9 +593,11 @@ static int MainFrame_sortGraphThread(void* ptr) {
     }
     SDL_UnlockMutex(self->ui_mutex);
 
+    self->graph[graph_index]->sort_in_progress = true;
     ColumnGraph_sortGraph(self->graph[graph_index], gm, MainFrame_DelaySort, self);
 
     self->graph_sorting[graph_index] = false;
+    self->graph[graph_index]->sort_in_progress = false;
 
     safe_free((void**)&arg);
     return 0;

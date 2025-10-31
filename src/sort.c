@@ -288,6 +288,29 @@ void List_sortBogo(List* list, CompareFunc compare_func, SDL_mutex* gm, DelayFun
     }
 }
 
+void List_sortSelection(List* list, CompareFunc compare_func, SDL_mutex* gm, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph) {
+    if (!list || list->size < 2) return;
+
+    for (int i = 0; i < (int)list->size - 1; i++) {
+        int min = i;
+        for (int j = i+1; j < (int)list->size; j++) {
+            void* a = List_get(list, j);
+            void* b = List_get(list, min);
+            if (compare_func(a, b) < 0) {
+                min = j;
+            }
+        }
+        if (min != i) {
+            SDL_LockMutex(gm);
+            List_swap(list, i, min);
+            SDL_UnlockMutex(gm);
+            if (delay_func) {
+                delay_func(mainframe, column_graph, List_get(list, i));
+            }
+        }
+    }
+}
+
 void List_sort(List* list, ListSortType sortType, CompareFunc compare_func, SDL_mutex* gm, DelayFunc delay_func , MainFrame* mainframe, ColumnGraph* column_graph) {
     switch (sortType) {
         case LIST_SORT_TYPE_BUBBLE:
@@ -307,6 +330,9 @@ void List_sort(List* list, ListSortType sortType, CompareFunc compare_func, SDL_
             break;
         case LIST_SORT_TYPE_BOGO:
             List_sortBogo(list, compare_func, gm, delay_func, mainframe, column_graph);
+            break;
+        case LIST_SORT_TYPE_SELECTION:
+            List_sortSelection(list, compare_func, gm, delay_func, mainframe, column_graph);
             break;
         default:
             log_message(LOG_LEVEL_WARN, "Unknown ListSortType: %d", sortType);
@@ -328,6 +354,8 @@ const char* ListSortType_toString(ListSortType sortType) {
             return "Bitonic Sort";
         case LIST_SORT_TYPE_BOGO:
             return "Bogo Sort";
+        case LIST_SORT_TYPE_SELECTION:
+            return "Selection Sort";
         default:
             return "Unknown Sort Type";
     }

@@ -35,10 +35,13 @@ struct MainFrame {
 
     bool hovered_help;
 
-    bool func_run;
+    bool* graph_sorting;
 
     SDL_mutex* ui_mutex;
     SDL_mutex** graph_mutexes;
+
+    int last_width;
+    int last_height;
 };
 
 struct SortThreadArg {

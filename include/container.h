@@ -7,35 +7,35 @@
 
 #include "Settings.h"
 
-/**
- * @brief A container element.
- *
- * Containers are a simple Box that can hold other elements inside them.
- * Similar to the <div> element in HTML.
- */
-struct Container {
     /**
-     * @brief Pointer to the Box representing the container's visual appearance
-     */
-    Box* box;
-
-    /**
-     * @brief List of child elements contained within this container
+     * @brief A container element.
      *
-     * The list can't be NULL, but can be empty.
-     * All the elements in the list are of type Element*.
-     * The positions of the children are NOT relative to the container's position.
+     * Containers are a simple Box that can hold other elements inside them.
+     * Similar to the <div> element in HTML.
      */
-    List* children;
+    struct Container {
+        /**
+         * @brief Pointer to the Box representing the container's visual appearance
+         */
+        Box* box;
 
-    /**
-     * @brief Pointer to the parent object of the container
-     *
-     * Used for hierarchical UI structures. May be NULL if no parent.
-     * Can also be used for going back references in event handlers.
-     */
-    void* parent;
-};
+        /**
+         * @brief List of child elements contained within this container
+         *
+         * The list can't be NULL, but can be empty.
+         * All the elements in the list are of type Element*.
+         * The positions of the children are NOT relative to the container's position.
+         */
+        List* children;
+
+        /**
+         * @brief Pointer to the parent object of the container
+         *
+         * Used for hierarchical UI structures. May be NULL if no parent.
+         * Can also be used for going back references in event handlers.
+         */
+        void* parent;
+    };
 
 /**
  * @brief Create a new Container instance

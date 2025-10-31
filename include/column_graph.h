@@ -31,6 +31,7 @@ struct ColumnGraph {
 ColumnGraph* ColumnGraph_new(float width, float height, Position* position, Input* input, void* parent, ColumnGraphType type, ColumnsHoverFunc onHover, ColumnsHoverFunc offHover);
 void ColumnGraph_destroy(ColumnGraph* graph);
 void ColumnGraph_initBars(ColumnGraph* graph, int bars_count, void** values, ColumnGraphStyle style);
+void ColumnGraph_initBarsColored(ColumnGraph* graph, int bars_count, void** values, Color** colors);
 void ColumnGraph_initBarsIncrement(ColumnGraph* graph, int bars_count, ColumnGraphStyle style);
 void ColumnGraph_setGraphType(ColumnGraph* graph, ColumnGraphType type);
 void ColumnGraph_shuffleBars(ColumnGraph* graph);
@@ -38,6 +39,7 @@ void ColumnGraph_sortGraph(ColumnGraph* graph, DelayFunc delay_func, MainFrame* 
 void ColumnGraph_removeHovering(ColumnGraph* graph);
 void ColumnGraph_renderBar(ColumnGraph* graph, int w, int h);
 void** ColumnGraph_getValues(ColumnGraph* graph, int* out_len);
+Color** ColumnGraph_getColors(ColumnGraph* graph, int* out_len);
 void ColumnGraph_setSortType(ColumnGraph* graph, ListSortType sort_type);
 void ColumnGraph_resetBars(ColumnGraph* graph);
 void ColumnGraph_resetContainer(ColumnGraph* graph);
@@ -54,7 +56,7 @@ void ColumnGraphBar_destroy(ColumnGraphBar* bar);
 void ColumnGraphBar_setValue(ColumnGraphBar* bar, void* value);
 int ColumnGraphBar_compare(const void* a, const void* b);
 
-Color** ColumnGraph_getColors(ColumnGraphStyle style, int* out_count);
+Color** ColumnGraph_getDefaultColors(ColumnGraphStyle style, int* out_count);
 char* ColumnGraph_getStyleName(ColumnGraphStyle style);
 Color* ColumnGraph_getHoverColor(ColumnGraphStyle style);
 

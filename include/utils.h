@@ -32,6 +32,7 @@ Color* Color_fromHex(const char* hex);
 void Color_destroy(Color* color);
 
 void safe_free(void** ptr);
+void safe_freeArray(void** arr, int len);
 int init();
 #define SDL_RECT_NULL (SDL_FRect) { -1.0f, -1.0f, -1.0f, -1.0f }
 SDL_FRect SDL_CreateRect(float x, float y, float w, float h, bool from_center);

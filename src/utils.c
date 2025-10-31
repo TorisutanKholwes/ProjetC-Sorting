@@ -37,6 +37,14 @@ void safe_free(void** ptr) {
     }
 }
 
+void safe_freeArray(void** arr, int len) {
+    for (int i = 0; i < len; i++) {
+        if (arr[i]) {
+            safe_free((void**)&arr[i]);
+        }
+    }
+}
+
 int init() {
     Uint32 sdlFlags = SDL_INIT_VIDEO | SDL_INIT_AUDIO;
 

@@ -59,7 +59,7 @@ void ColumnGraph_initBars(ColumnGraph* graph, const int bars_count, void** value
     graph->graph_style = style;
 
     int numColors;
-    Color** colors = ColumnGraph_getColors(style, &numColors);
+    Color** colors = ColumnGraph_getDefaultColors(style, &numColors);
 
     void* max;
     switch (graph->type) {
@@ -98,6 +98,30 @@ void ColumnGraph_initBars(ColumnGraph* graph, const int bars_count, void** value
     safe_free((void**)&colors);
 }
 
+void ColumnGraph_initBarsColored(ColumnGraph* graph, int bars_count, void** values, Color** colors) {
+    if (!graph) return;
+    graph->bars_count = bars_count;
+
+    void* max;
+    switch (graph->type) {
+        case GRAPH_TYPE_INT:
+            max = (void*) arrayMax(voidToLongArray(values, bars_count), bars_count);
+            break;
+        case GRAPH_TYPE_STRING:
+            max = (void*) String_max((const char**)values, bars_count);
+            break;
+        default:
+            max = NULL;
+            break;
+    }
+    if (max == NULL) return;
+
+    for (int i = 0; i < bars_count; i++) {
+        ColumnGraphBar* graph_bar = ColumnGraphBar_new(values[i], colors[i], graph->size.height, (void*)max, graph);
+        List_push(graph->bars, graph_bar);
+        FlexContainer_addElement(graph->container, graph_bar->element, 1.f, 1.f, -1.f);
+    }
+}
 void ColumnGraph_initBarsIncrement(ColumnGraph* graph, int bars_count, ColumnGraphStyle style) {
     if (!graph || graph->type != GRAPH_TYPE_INT) return;
     long* values = calloc(bars_count, sizeof(long));
@@ -214,6 +238,30 @@ void** ColumnGraph_getValues(ColumnGraph* graph, int* out_len) {
     return values;
 }
 
+Color** ColumnGraph_getColors(ColumnGraph* graph, int* out_len) {
+    if (!graph) {
+        *out_len = 0;
+        return NULL;
+    };
+    int count = List_size(graph->bars);
+    Color** colors = calloc(count, sizeof(Color*));
+    if (!colors) {
+        error("Failed to allocate memory for ColumnGraph colors");
+        *out_len = 0;
+        return NULL;
+    }
+    ListIterator* it = ListIterator_new(graph->bars);
+    int index = 0;
+    while (ListIterator_hasNext(it)) {
+        ColumnGraphBar* bar = (ColumnGraphBar*)ListIterator_next(it);
+        colors[index++] = bar->color;
+    }
+    ListIterator_destroy(it);
+    *out_len = count;
+
+    return colors;
+}
+
 void ColumnGraph_resetBars(ColumnGraph* graph) {
     if (!graph) return;
     FlexContainer_clear(graph->container);
@@ -326,7 +374,7 @@ int ColumnGraphBar_compare(const void* a, const void* b) {
     }
 }
 
-Color** ColumnGraph_getColors(ColumnGraphStyle style, int* out_count) {
+Color** ColumnGraph_getDefaultColors(ColumnGraphStyle style, int* out_count) {
     Color* colors[7];
     switch (style) {
         case GRAPH_RAINBOW: {

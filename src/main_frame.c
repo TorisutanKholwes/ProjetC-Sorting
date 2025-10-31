@@ -481,7 +481,18 @@ static bool MainFrame_removePopup(MainFrame* self, void* _, ColumnGraphType type
     return true;
 }
 
-static void MainFrame_updateGraphs(MainFrame* self) {
+static void MainFrame_updateGraphs(MainFrame* self, int old_count, int old_bar_count) {
+    ColumnGraphType* old_graphs_types = calloc(old_count, sizeof(ColumnGraphType));
+    int* old_graphs_lengths = calloc(old_count, sizeof(int));
+    Color*** old_graphs_colors = calloc(old_count, sizeof(Color *));
+    void*** old_graphs_values = calloc(old_count, sizeof(void **));
+    if (old_count > 0 && old_bar_count >= self->bar_count) {
+        for (int i = 0; i < old_count; i++) {
+            old_graphs_types[i] = self->graph[i]->type;
+            old_graphs_values[i] = ColumnGraph_getValues(self->graph[i], &old_graphs_lengths[i]);
+            old_graphs_colors[i] = ColumnGraph_getColors(self->graph[i], &old_graphs_lengths[i]);
+        }
+    }
     self->graph = realloc(self->graph, self->graph_count * sizeof(ColumnGraph *));
     int w, h;
     SDL_GetWindowSize(self->app->window, &w, &h);
@@ -491,10 +502,23 @@ static void MainFrame_updateGraphs(MainFrame* self) {
         float height = h / (graphs / 2);
         float x = (i % 2) * width;
         float y = (i / 2) * height;
-        self->graph[i] = ColumnGraph_new(width, height, Position_new(x, y), self->app->input, self, GRAPH_TYPE_INT,
+        ColumnGraphType type = GRAPH_TYPE_INT;
+        void** values = NULL;
+        Color** colors = NULL;
+        if (i < old_count) {
+            type = old_graphs_types[i];
+            values = old_graphs_values[i];
+            colors = old_graphs_colors[i];
+        }
+        self->graph[i] = ColumnGraph_new(width, height, Position_new(x, y), self->app->input, self, type,
                                          (ColumnsHoverFunc) MainFrame_createPopup,
                                          (ColumnsHoverFunc) MainFrame_removePopup);
-        ColumnGraph_initBarsIncrement(self->graph[i], self->bar_count, self->graph_style);
+        if (values) {
+            ColumnGraph_initBarsColored(self->graph[i], self->bar_count, values, colors);
+            safe_free((void**)&values);
+        } else {
+            ColumnGraph_initBarsIncrement(self->graph[i], self->bar_count, self->graph_style);
+        }
     }
     MainFrame_addElements(self, self->app);
 }
@@ -510,10 +534,10 @@ static void MainFrame_onRuneP(Input* input, SDL_Event* evt, MainFrame* self) {
         }
     }
     self->graph_count++;
-    for (int i = 0; i < self->graph_count - 1; i++) {
+    /*for (int i = 0; i < self->graph_count - 1; i++) {
         ColumnGraph_destroy(self->graph[i]);
-    }
-    MainFrame_updateGraphs(self);
+    }*/
+    MainFrame_updateGraphs(self, self->graph_count - 1, self->bar_count);
 }
 
 static void MainFrame_onRuneM(Input* input, SDL_Event* evt, MainFrame* self) {
@@ -530,10 +554,10 @@ static void MainFrame_onRuneM(Input* input, SDL_Event* evt, MainFrame* self) {
             self->selected_graph_index--;
         }
         self->graph_count--;
-        for (int i = 0; i < self->graph_count + 1; i++) {
+        /*for (int i = 0; i < self->graph_count + 1; i++) {
             ColumnGraph_destroy(self->graph[i]);
-        }
-        MainFrame_updateGraphs(self);
+        }*/
+        MainFrame_updateGraphs(self, self->graph_count + 1, self->bar_count);
     }
 }
 
@@ -585,7 +609,7 @@ static void MainFrame_DelaySort(MainFrame* self, ColumnGraph* graph, ColumnGraph
     MainFrame_render(self->app->renderer, self);
     SDL_RenderPresent(self->app->renderer);
     actual->element->data.box->background = actual->color;
-    SDL_Delay(7);
+    //SDL_Delay(7);
 }
 
 static void MainFrame_onEnter(Input* input, SDL_Event* evt, MainFrame* self) {
@@ -610,18 +634,16 @@ static void MainFrame_onEnter(Input* input, SDL_Event* evt, MainFrame* self) {
     if (self->graph_count == graphCount && self->bar_count == barCount) {
         return;
     }
-    if (self->graph_count == graphCount && !self->all_selected) {
-        ColumnGraph* graph = self->graph[self->selected_graph_index];
-        graph->bars_count = barCount;
-        MainFrame_updateGraphs(self);
-        return;
+    if (self->popup) {
+        for (int i = 0; i < self->graph_count; i++) {
+            ColumnGraph_removeHovering(self->graph[i]);
+        }
     }
+
+    int old_count = self->graph_count;
     self->bar_count = barCount;
-    for (int i = 0; i < self->graph_count; i++) {
-        ColumnGraph_destroy(self->graph[i]);
-    }
     self->graph_count = graphCount;
-    MainFrame_updateGraphs(self);
+    MainFrame_updateGraphs(self, old_count, -1);
 }
 
 static void MainFrame_loadFileCallback(MainFrame* self, const char* filename) {

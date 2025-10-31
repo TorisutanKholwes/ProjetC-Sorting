@@ -102,8 +102,11 @@ MainFrame* MainFrame_new(App* app) {
     self->timer = Timer_new();
     self->temp_element = NULL;
     self->selected_graph_index = 0;
+    self->ui_mutex = SDL_CreateMutex();
     self->graph_style = GRAPH_RAINBOW;
+    self->graph_mutexes = calloc(self->graph_count, sizeof(SDL_mutex*));
     for (int i = 0; i < self->graph_count; i++) {
+        self->graph_mutexes[i] = SDL_CreateMutex();
         self->graph[i] = ColumnGraph_new(w, h, Position_new(0, 0), app->input, self, GRAPH_TYPE_INT,
                                          (ColumnsHoverFunc) MainFrame_createPopup,
                                          (ColumnsHoverFunc) MainFrame_removePopup);
@@ -132,6 +135,7 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
     int w, h;
     SDL_GetWindowSize(app->window, &w, &h);
 
+    /*
     for (int i = 0; i < self->graph_count; i++) {
         ColumnGraph* graph = self->graph[i];
         ListIterator* graphIt = ListIterator_new(graph->bars);
@@ -144,7 +148,7 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
         }
         ListIterator_destroy(graphIt);
         FlexContainer_layout(graph->container);
-    }
+    }*/
 
     self->settings_width = 300;
     float baseWidth = w;
@@ -284,10 +288,29 @@ void MainFrame_destroy(MainFrame* self) {
 
     Element_destroyList(self->elements);
 
+    if (self->ui_mutex) {
+        SDL_DestroyMutex(self->ui_mutex);
+    }
+    if (self->graph_mutexes) {
+        for (int i = 0; i < self->graph_count; i++) {
+            if (self->graph_mutexes[i]) {
+                SDL_DestroyMutex(self->graph_mutexes[i]);
+            }
+        }
+        safe_free((void **) &self->graph_mutexes);
+    }
+
     safe_free((void **) &self);
 }
 
 void MainFrame_render(SDL_Renderer* renderer, MainFrame* self) {
+    for (int i = 0; i < self->graph_count; i++) {
+        SDL_mutex* gm = self->graph_mutexes[i];
+        SDL_LockMutex(gm);
+        ColumnGraph_render(self->graph[i], renderer);
+        SDL_UnlockMutex(gm);
+    }
+
     Element_renderList(self->elements, renderer);
 
     if (self->popup) {
@@ -497,10 +520,18 @@ static void MainFrame_updateGraphs(MainFrame* self, int old_count, int old_bar_c
             old_graphs_colors[i] = ColumnGraph_getColors(self->graph[i], &old_graphs_lengths[i]);
         }
     }
+    for (int i = 0; i < old_count; i++) {
+        ColumnGraph_destroy(self->graph[i]);
+    }
     self->graph = realloc(self->graph, self->graph_count * sizeof(ColumnGraph *));
+    self->graph_mutexes = realloc(self->graph_mutexes, self->graph_count * sizeof(SDL_mutex*));
     int w, h;
     SDL_GetWindowSize(self->app->window, &w, &h);
     for (int i = 0; i < self->graph_count; i++) {
+        if (self->graph_mutexes[i]) {
+            SDL_DestroyMutex(self->graph_mutexes[i]);
+        }
+        self->graph_mutexes[i] = SDL_CreateMutex();
         float graphs = self->graph_count % 2 == 0 ? self->graph_count : self->graph_count + 1;
         float width = self->graph_count == 1 ? w : w / 2;
         float height = h / (graphs / 2);
@@ -520,6 +551,10 @@ static void MainFrame_updateGraphs(MainFrame* self, int old_count, int old_bar_c
         if (values) {
             ColumnGraph_initBarsColored(self->graph[i], self->bar_count, values, colors);
             safe_free((void**)&values);
+            for (int j = 0; j < old_graphs_lengths[i]; j++) {
+                Color_destroy(colors[j]);
+            }
+            safe_free((void**)&colors);
         } else {
             ColumnGraph_initBarsIncrement(self->graph[i], self->bar_count, self->graph_style);
         }
@@ -577,12 +612,58 @@ static void MainFrame_quitApp(Input* input, SDL_Event* evt, Button* button) {
     }
 }
 
+static int MainFrame_sortGraphThread(void* ptr) {
+    SortThreadArg* arg = (SortThreadArg*) ptr;
+    if (!arg || !arg->self) return 1;
+    MainFrame* self = arg->self;
+    int graph_index = arg->graph_index;
+    SDL_mutex* gm = self->graph_mutexes[graph_index];
+
+    SDL_LockMutex(self->ui_mutex);
+    if (self->popup) {
+        ColumnGraph_removeHovering(self->graph[graph_index]);
+        MainFrame_removePopup(self, NULL, GRAPH_TYPE_INT);
+    }
+    SDL_UnlockMutex(self->ui_mutex);
+
+    ColumnGraph_sortGraph(self->graph[graph_index], gm, MainFrame_DelaySort, self);
+
+    /*SDL_LockMutex(self->ui_mutex);
+    MainFrame_addElements(self, self->app);
+    SDL_UnlockMutex(self->ui_mutex);*/
+
+    safe_free((void**)&arg);
+    return 0;
+}
+
 static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self) {
     if (!self || self->showSettings || self->graph_info || !self->func_run) return;
     self->func_run = false;
     UNUSED(input);
     UNUSED(evt);
-    if (self->showSettings) return;
+    int graph_to_sort = self->all_selected ? self->graph_count : 1;
+    SDL_Thread* threads[graph_to_sort];
+
+    for (int i = 0; i < graph_to_sort; i++) {
+        int idx = self->all_selected ? i : self->selected_graph_index;
+        SortThreadArg* arg = calloc(1, sizeof(SortThreadArg));
+        if (!arg) {
+            log_message(LOG_LEVEL_WARN, "Cannot start sort thread %d due to memory allocation failure", i);
+            continue;
+        }
+        arg->self = self;
+        arg->graph_index = idx;
+        threads[i] = SDL_CreateThread(MainFrame_sortGraphThread, "SortThread", (void*) arg);
+    }
+
+    /*for (int i = 0; i < graph_to_sort; i++) {
+        if (threads[i]) {
+            SDL_WaitThread(threads[i], NULL);
+        }
+    }*/
+
+
+    /*
     bool hasPopup = self->popup != NULL;
     if (self->all_selected) {
         for (int i = 0; i < self->graph_count; i++) {
@@ -597,7 +678,7 @@ static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self) {
         }
         ColumnGraph_sortGraph(self->graph[self->selected_graph_index], MainFrame_DelaySort, self);
     }
-    MainFrame_addElements(self, self->app);
+    MainFrame_addElements(self, self->app);*/
     self->func_run = true;
 }
 
@@ -606,15 +687,11 @@ static void MainFrame_DelaySort(MainFrame* self, ColumnGraph* graph, ColumnGraph
         log_message(LOG_LEVEL_WARN, "No graph to sort");
         return;
     }
-    actual->element->data.box->background = COLOR_RED;
+    UNUSED(self);
+    actual->element->data.box->background = COLOR_WHITE;
     ColumnGraph_resetContainer(graph);
-    MainFrame_addElements(self, self->app);
-    Color* background = self->app->theme->background;
-    SDL_SetRenderDrawColor(self->app->renderer, background->r, background->g, background->b, background->a);
-    SDL_RenderClear(self->app->renderer);
-    MainFrame_render(self->app->renderer, self);
-    SDL_RenderPresent(self->app->renderer);
-    actual->element->data.box->background = actual->color;
+    SDL_Delay(7);
+    actual->element->data.box->background = Color_copy(actual->color);
     //SDL_Delay(7);
 }
 

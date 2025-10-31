@@ -109,6 +109,8 @@ typedef struct Container Container;
 /** @brief A selectable UI element */
 typedef struct Select Select;
 
+typedef struct SortThreadArg SortThreadArg;
+
 // Frames
 /** @brief The main application frame */
 typedef struct MainFrame MainFrame;

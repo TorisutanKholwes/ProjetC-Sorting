@@ -35,9 +35,10 @@ void ColumnGraph_initBarsColored(ColumnGraph* graph, int bars_count, void** valu
 void ColumnGraph_initBarsIncrement(ColumnGraph* graph, int bars_count, ColumnGraphStyle style);
 void ColumnGraph_setGraphType(ColumnGraph* graph, ColumnGraphType type);
 void ColumnGraph_shuffleBars(ColumnGraph* graph);
-void ColumnGraph_sortGraph(ColumnGraph* graph, DelayFunc delay_func, MainFrame* main_frame);
+void ColumnGraph_sortGraph(ColumnGraph* graph, SDL_mutex* gm, DelayFunc delay_func, MainFrame* main_frame);
 void ColumnGraph_removeHovering(ColumnGraph* graph);
 void ColumnGraph_renderBar(ColumnGraph* graph, int w, int h);
+void ColumnGraph_render(ColumnGraph* graph, SDL_Renderer* renderer);
 void** ColumnGraph_getValues(ColumnGraph* graph, int* out_len);
 Color** ColumnGraph_getColors(ColumnGraph* graph, int* out_len);
 void ColumnGraph_setSortType(ColumnGraph* graph, ListSortType sort_type);

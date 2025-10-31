@@ -288,6 +288,7 @@ void FlexContainer_layout(FlexContainer *container) {
     ListIterator *it = ListIterator_new(container->items);
     while (ListIterator_hasNext(it)) {
         FlexItem *item = ListIterator_next(it);
+        if (!item) continue;
         total_main_size += is_row ? item->width : item->height;
         if (item->element->type == ELEMENT_TYPE_BUTTON) {
             Button *btn = item->element->data.button;

@@ -36,6 +36,14 @@ struct MainFrame {
     bool hovered_help;
 
     bool func_run;
+
+    SDL_mutex* ui_mutex;
+    SDL_mutex** graph_mutexes;
+};
+
+struct SortThreadArg {
+    MainFrame* self;
+    int graph_index;
 };
 
 MainFrame* MainFrame_new(App* app);

@@ -92,6 +92,7 @@ void ColumnGraph_initBars(ColumnGraph* graph, const int bars_count, void** value
         List_push(graph->bars, graph_bar);
         FlexContainer_addElement(graph->container, graph_bar->element, 1.f, 1.f, -1.f);
     }
+    FlexContainer_layout(graph->container);
     for (int i = 0; i < numColors; i++) {
         Color_destroy(colors[i]);
     }
@@ -121,6 +122,7 @@ void ColumnGraph_initBarsColored(ColumnGraph* graph, int bars_count, void** valu
         List_push(graph->bars, graph_bar);
         FlexContainer_addElement(graph->container, graph_bar->element, 1.f, 1.f, -1.f);
     }
+    FlexContainer_layout(graph->container);
 }
 void ColumnGraph_initBarsIncrement(ColumnGraph* graph, int bars_count, ColumnGraphStyle style) {
     if (!graph || graph->type != GRAPH_TYPE_INT) return;
@@ -151,6 +153,7 @@ void ColumnGraph_shuffleBars(ColumnGraph* graph) {
         ColumnGraphBar* bar = (ColumnGraphBar*)ListIterator_next(it);
         FlexContainer_addElement(graph->container, bar->element, 1.f, 1.f, -1.f);
     }
+    FlexContainer_layout(graph->container);
     ListIterator_destroy(it);
 }
 
@@ -164,18 +167,20 @@ void ColumnGraph_resetContainer(ColumnGraph* graph) {
             FlexContainer_addElement(graph->container, bar->element, 1.f, 1.f, -1.f);
         }
     }
+    FlexContainer_layout(graph->container);
     ListIterator_destroy(it);
 }
 
-void ColumnGraph_sortGraph(ColumnGraph* graph, DelayFunc delay_func, MainFrame* main_frame) {
+void ColumnGraph_sortGraph(ColumnGraph* graph, SDL_mutex* gm, DelayFunc delay_func, MainFrame* main_frame) {
     if (!graph) return;
-    List_sort(graph->bars, graph->sort_type, ColumnGraphBar_compare, delay_func, main_frame, graph);
+    List_sort(graph->bars, graph->sort_type, ColumnGraphBar_compare, gm, delay_func, main_frame, graph);
     FlexContainer_clear(graph->container);
     ListIterator* it = ListIterator_new(graph->bars);
     while (ListIterator_hasNext(it)) {
         ColumnGraphBar* bar = (ColumnGraphBar*)ListIterator_next(it);
         FlexContainer_addElement(graph->container, bar->element, 1.f, 1.f, -1.f);
     }
+    FlexContainer_layout(graph->container);
     ListIterator_destroy(it);
 }
 
@@ -213,6 +218,17 @@ void ColumnGraph_renderBar(ColumnGraph* graph, int w, int h) {
     ColumnGraph_initBars(graph, val_count, values, graph->graph_style);
 
     safe_free((void**)&values);
+}
+
+void ColumnGraph_render(ColumnGraph* graph, SDL_Renderer* renderer) {
+    if (!graph || !renderer) return;
+    ListIterator* it = ListIterator_new(graph->bars);
+    while (ListIterator_hasNext(it)) {
+        ColumnGraphBar* bar = (ColumnGraphBar*)ListIterator_next(it);
+        if (!bar) continue;
+        Element_render(bar->element, renderer);
+    }
+    ListIterator_destroy(it);
 }
 
 void** ColumnGraph_getValues(ColumnGraph* graph, int* out_len) {
@@ -254,7 +270,7 @@ Color** ColumnGraph_getColors(ColumnGraph* graph, int* out_len) {
     int index = 0;
     while (ListIterator_hasNext(it)) {
         ColumnGraphBar* bar = (ColumnGraphBar*)ListIterator_next(it);
-        colors[index++] = bar->color;
+        colors[index++] = Color_copy(bar->color);
     }
     ListIterator_destroy(it);
     *out_len = count;

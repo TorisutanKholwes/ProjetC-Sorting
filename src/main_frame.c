@@ -5,6 +5,7 @@
 #include "main_frame.h"
 
 #include "app.h"
+#include "audio.h"
 #include "button.h"
 #include "column_graph.h"
 #include "element.h"
@@ -56,6 +57,7 @@ static void MainFrame_showTempText(MainFrame* self, const char* text);
 static void MainFrame_showTempTextf(MainFrame* self, const char* format, ...);
 static void MainFrame_showCustomSizeTempText(MainFrame* self, int font_size, const char* text);
 static void MainFrame_showCustomSizeTempTextf(MainFrame* self, int font_size, const char* format, ...);
+static void MainFrame_onRuneT(Input* input, SDL_Event* evt, MainFrame* self);
 
 MainFrame* MainFrame_new(App* app) {
     MainFrame* self = calloc(1, sizeof(MainFrame));
@@ -335,6 +337,7 @@ void MainFrame_focus(MainFrame* self) {
     Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_I, (EventHandlerFunc) MainFrame_onRuneI, self);
     Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_O, (EventHandlerFunc) MainFrame_onRuneO, self);
     Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_B, (EventHandlerFunc) MainFrame_onRuneB, self);
+    Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_T, (EventHandlerFunc) MainFrame_onRuneT, self);
 
     Input_addEventHandler(self->app->input, SDL_MOUSEBUTTONDOWN, (EventHandlerFunc) MainFrame_onClick, self);
     Input_addEventHandler(self->app->input, SDL_MOUSEMOTION, (EventHandlerFunc) MainFrame_onMouseMove, self);
@@ -1075,4 +1078,11 @@ static void MainFrame_showCustomSizeTempTextf(MainFrame* self, int font_size, co
     vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
     MainFrame_showCustomSizeTempText(self, font_size, buffer);
+}
+
+static void MainFrame_onRuneT(Input* input, SDL_Event* evt, MainFrame* self) {
+    if (!self) return;
+    UNUSED(input);
+    UNUSED(evt);
+    Audio_playSweepingNoise(20, 20000, 10000);
 }

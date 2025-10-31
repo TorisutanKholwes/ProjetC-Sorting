@@ -47,6 +47,12 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
+    if (Mix_OpenAudio(44100, AUDIO_S16SYS, 1, 4096) < 0) {
+        error("Unable to initialize SDL_mixer: %s", Mix_GetError());
+        SDL_Quit();
+        exit(EXIT_FAILURE);
+    }
+
     log_message(LOG_LEVEL_INFO, "Successfully initialized SDL, Window and Renderer. Start looping app...");
     App* app = App_create(window, renderer);
 

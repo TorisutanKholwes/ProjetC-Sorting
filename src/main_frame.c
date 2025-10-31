@@ -642,7 +642,7 @@ static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self) {
     UNUSED(input);
     UNUSED(evt);
     int graph_to_sort = self->all_selected ? self->graph_count : 1;
-    SDL_Thread* threads[graph_to_sort];
+    SDL_Thread** threads = calloc(graph_to_sort, sizeof(SDL_Thread*));
 
     for (int i = 0; i < graph_to_sort; i++) {
         int idx = self->all_selected ? i : self->selected_graph_index;
@@ -655,30 +655,6 @@ static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self) {
         arg->graph_index = idx;
         threads[i] = SDL_CreateThread(MainFrame_sortGraphThread, "SortThread", (void*) arg);
     }
-
-    /*for (int i = 0; i < graph_to_sort; i++) {
-        if (threads[i]) {
-            SDL_WaitThread(threads[i], NULL);
-        }
-    }*/
-
-
-    /*
-    bool hasPopup = self->popup != NULL;
-    if (self->all_selected) {
-        for (int i = 0; i < self->graph_count; i++) {
-            if (hasPopup) {
-                ColumnGraph_removeHovering(self->graph[i]);
-            }
-            ColumnGraph_sortGraph(self->graph[i], MainFrame_DelaySort, self);
-        }
-    } else {
-        if (hasPopup) {
-            ColumnGraph_removeHovering(self->graph[self->selected_graph_index]);
-        }
-        ColumnGraph_sortGraph(self->graph[self->selected_graph_index], MainFrame_DelaySort, self);
-    }
-    MainFrame_addElements(self, self->app);*/
     self->func_run = true;
 }
 

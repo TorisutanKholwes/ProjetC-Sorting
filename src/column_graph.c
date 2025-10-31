@@ -3,7 +3,7 @@
  * ALl rights reserved
  */
 #include "color.h"
-#include "column_graphic.h"
+#include "column_graph.h"
 #include "element.h"
 #include "geometry.h"
 #include "input.h"

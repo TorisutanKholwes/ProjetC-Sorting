@@ -6,7 +6,7 @@
 #include "logger.h"
 #include "utils.h"
 #include "string_builder.h"
-#include "column_graphic.h"
+#include "column_graph.h"
 
 static void List_sortBubble(List* list, CompareFunc compare_func, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph);
 static void List_sortQuick(List* list, CompareFunc compare_func);

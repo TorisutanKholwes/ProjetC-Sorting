@@ -6,7 +6,7 @@
 
 #include "app.h"
 #include "button.h"
-#include "column_graphic.h"
+#include "column_graph.h"
 #include "element.h"
 #include "frame.h"
 #include "geometry.h"

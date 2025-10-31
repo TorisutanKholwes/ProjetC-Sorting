@@ -31,7 +31,7 @@ int main() {
     flags |= SDL_WINDOW_FULLSCREEN;
 #endif
 
-    SDL_Window* window = SDL_CreateWindow(WINDOW_TITLE, 50, 50,
+    SDL_Window* window = SDL_CreateWindow(WINDOW_TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         WINDOW_WIDTH, WINDOW_HEIGHT, flags);
 
     if (!window) {

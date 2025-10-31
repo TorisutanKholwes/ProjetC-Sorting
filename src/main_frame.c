@@ -528,11 +528,6 @@ static void MainFrame_updateGraphs(MainFrame* self, int old_count, int old_bar_c
     int w, h;
     SDL_GetWindowSize(self->app->window, &w, &h);
     for (int i = 0; i < self->graph_count; i++) {
-#ifndef WIN32
-        if (self->graph_mutexes[i]) {
-            SDL_DestroyMutex(self->graph_mutexes[i]);
-        }
-#endif
         self->graph_mutexes[i] = SDL_CreateMutex();
         float graphs = self->graph_count % 2 == 0 ? self->graph_count : self->graph_count + 1;
         float width = self->graph_count == 1 ? w : w / 2;

@@ -4,8 +4,11 @@
  */
 #include "sort.h"
 
+#include "column_graph.h"
 #include "list.h"
 #include "logger.h"
+#include "stats.h"
+
 int List_defaultCompare(const void* a, const void* b) {
     return (long)a - (long)b;
 }
@@ -41,11 +44,21 @@ void List_sortBubble(List* list, CompareFunc compare_func, SDL_mutex* gm, DelayF
             ListNode* next = node->next;
             void* a = node->value;
             void* b = next->value;
+
+            if (column_graph && column_graph->stats) {
+                GraphStats_incrementAccessMemory(column_graph->stats, 2); // lecture de a et b
+                GraphStats_incrementComparisons(column_graph->stats);
+            }
+
             if (compare_func(a, b) > 0) {
                 SDL_LockMutex(gm);
                 void* temp = node->value;
                 node->value = next->value;
                 next->value = temp;
+                if (column_graph && column_graph->stats) {
+                    GraphStats_incrementSwaps(column_graph->stats);
+                    GraphStats_incrementAccessMemory(column_graph->stats, 3); // temp read + 2 écritures
+                }
                 SDL_UnlockMutex(gm);
                 if (delay_func) {
                     delay_func(mainframe, column_graph, a, b);
@@ -59,14 +72,25 @@ void List_sortBubble(List* list, CompareFunc compare_func, SDL_mutex* gm, DelayF
 
 static ListNode* partitionQS(ListNode* low, ListNode* high, CompareFunc compare_func, SDL_mutex* gm, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph) {
     void* pivot = high->value;
+    if (column_graph && column_graph->stats) {
+        GraphStats_incrementAccessMemory(column_graph->stats, 1); // lecture de pivot
+    }
     ListNode* i = low ? low->prev : NULL;
     for (ListNode* j = low; j != high; j = j->next) {
+        if (column_graph && column_graph->stats) {
+            GraphStats_incrementComparisons(column_graph->stats);
+            GraphStats_incrementAccessMemory(column_graph->stats, 2); // lecture de j->value et pivot pour la comparaison
+        }
         if (compare_func(j->value, pivot) <= 0) {
             i = (i == NULL) ? low : i->next;
             SDL_LockMutex(gm);
             void* tmp = i->value;
             i->value = j->value;
             j->value = tmp;
+            if (column_graph && column_graph->stats) {
+                GraphStats_incrementSwaps(column_graph->stats);
+                GraphStats_incrementAccessMemory(column_graph->stats, 3); // tmp read + 2 écritures
+            }
             SDL_UnlockMutex(gm);
             if (delay_func) {
                 delay_func(mainframe, column_graph, j->value, i->value);
@@ -78,6 +102,10 @@ static ListNode* partitionQS(ListNode* low, ListNode* high, CompareFunc compare_
     void* tmp = i->value;
     i->value = high->value;
     high->value = tmp;
+    if (column_graph && column_graph->stats) {
+        GraphStats_incrementSwaps(column_graph->stats);
+        GraphStats_incrementAccessMemory(column_graph->stats, 3); // tmp read + 2 écritures
+    }
     SDL_UnlockMutex(gm);
     if (delay_func) {
         delay_func(mainframe, column_graph, i->value, high->value);
@@ -127,6 +155,9 @@ void List_sortQuick(List* list, CompareFunc compare_func, SDL_mutex* gm, DelayFu
 static void merge(List* list, void** temp_values, int left, int mid, int right, CompareFunc compare_func, SDL_mutex* gm, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph) {
     for (int i = left; i <= right; i++) {
         temp_values[i] = List_get(list, i);
+        if (column_graph && column_graph->stats) {
+            GraphStats_incrementAccessMemory(column_graph->stats, 1); // lecture depuis la liste
+        }
     }
 
     int i = left;
@@ -134,16 +165,26 @@ static void merge(List* list, void** temp_values, int left, int mid, int right, 
     int k = left;
 
     while (i <= mid && j <= right) {
+        if (column_graph && column_graph->stats) {
+            GraphStats_incrementComparisons(column_graph->stats);
+            GraphStats_incrementAccessMemory(column_graph->stats, 2);
+        }
         if (compare_func(temp_values[i], temp_values[j]) <= 0) {
             SDL_LockMutex(gm);
             List_set(list, k, temp_values[i]);
             SDL_UnlockMutex(gm);
+            if (column_graph && column_graph->stats) {
+                GraphStats_incrementAccessMemory(column_graph->stats, 1);
+            }
             if (delay_func) delay_func(mainframe, column_graph, temp_values[i], NULL);
             i++;
         } else {
             SDL_LockMutex(gm);
             List_set(list, k, temp_values[j]);
             SDL_UnlockMutex(gm);
+            if (column_graph && column_graph->stats) {
+                GraphStats_incrementAccessMemory(column_graph->stats, 1);
+            }
             if (delay_func) delay_func(mainframe, column_graph, temp_values[j], NULL);
             j++;
         }
@@ -154,6 +195,9 @@ static void merge(List* list, void** temp_values, int left, int mid, int right, 
         SDL_LockMutex(gm);
         List_set(list, k, temp_values[i]);
         SDL_UnlockMutex(gm);
+        if (column_graph && column_graph->stats) {
+            GraphStats_incrementAccessMemory(column_graph->stats, 1);
+        }
         if (delay_func) delay_func(mainframe, column_graph, temp_values[i], NULL);
         i++;
         k++;
@@ -163,6 +207,9 @@ static void merge(List* list, void** temp_values, int left, int mid, int right, 
         SDL_LockMutex(gm);
         List_set(list, k, temp_values[j]);
         SDL_UnlockMutex(gm);
+        if (column_graph && column_graph->stats) {
+            GraphStats_incrementAccessMemory(column_graph->stats, 1);
+        }
         if (delay_func) delay_func(mainframe, column_graph, temp_values[j], NULL);
         j++;
         k++;
@@ -204,20 +251,34 @@ void List_sortInsertion(List* list, CompareFunc compare_func, SDL_mutex* gm, Del
 
     for (size_t i = 1; i < list->size; i++) {
         void* key = List_get(list, i);
+        if (column_graph && column_graph->stats) {
+            GraphStats_incrementAccessMemory(column_graph->stats, 1);
+        }
         int j = i - 1;
 
-        while (j >= 0 && compare_func(List_get(list, j), key) > 0) {
-            SDL_LockMutex(gm);
-            void* value_to_move = List_get(list, j);
-            List_set(list, j + 1, value_to_move);
-            SDL_UnlockMutex(gm);
-            if (delay_func) {
-                delay_func(mainframe, column_graph, value_to_move, key);
+        while (j >= 0) {
+            if (column_graph && column_graph->stats) {
+                GraphStats_incrementComparisons(column_graph->stats);
+                GraphStats_incrementAccessMemory(column_graph->stats, 2);
             }
-            j = j - 1;
+            if (compare_func(List_get(list, j), key) > 0) {
+                SDL_LockMutex(gm);
+                void* value_to_move = List_get(list, j);
+                List_set(list, j + 1, value_to_move);
+                SDL_UnlockMutex(gm);
+                if (delay_func) {
+                    delay_func(mainframe, column_graph, value_to_move, key);
+                }
+                j = j - 1;
+            } else {
+                break;
+            }
         }
         SDL_LockMutex(gm);
         List_set(list, j + 1, key);
+        if (column_graph && column_graph->stats) {
+            GraphStats_incrementAccessMemory(column_graph->stats, 1);
+        }
         SDL_UnlockMutex(gm);
         if (delay_func) {
             delay_func(mainframe, column_graph, key, NULL);
@@ -231,9 +292,17 @@ static void bitonicMerge(List* list, int low, int count, int direction, CompareF
         for (int i = low; i < low + k; i++) {
             void* val1 = List_get(list, i);
             void* val2 = List_get(list, i + k);
+            if (column_graph && column_graph->stats) {
+                GraphStats_incrementAccessMemory(column_graph->stats, 2);
+                GraphStats_incrementComparisons(column_graph->stats);
+            }
             if ((direction == 1 && compare_func(val1, val2) > 0) || (direction == 0 && compare_func(val1, val2) < 0)) {
                 SDL_LockMutex(gm);
                 List_swap(list, i, i + k);
+                if (column_graph && column_graph->stats) {
+                    GraphStats_incrementSwaps(column_graph->stats);
+                    GraphStats_incrementAccessMemory(column_graph->stats, 3); // coût du swap (temp + 2 écritures)
+                }
                 SDL_UnlockMutex(gm);
                 if (delay_func) {
                     delay_func(mainframe, column_graph, val1, val2);
@@ -276,6 +345,9 @@ void List_sortBogo(List* list, CompareFunc compare_func, SDL_mutex* gm, DelayFun
     while (!List_isSorted(list, compare_func)) {
         SDL_LockMutex(gm);
         List_shuffle(list);
+        if (column_graph && column_graph->stats) {
+            GraphStats_incrementAccessMemory(column_graph->stats, (int)list->size); // lecture et écriture de chaque élément lors du shuffle
+        }
         SDL_UnlockMutex(gm);
         if (delay_func) {
             delay_func(mainframe, column_graph, NULL, NULL);
@@ -291,6 +363,11 @@ void List_sortSelection(List* list, CompareFunc compare_func, SDL_mutex* gm, Del
         for (int j = i+1; j < (int)list->size; j++) {
             void* a = List_get(list, j);
             void* b = List_get(list, min);
+            if (column_graph && column_graph->stats) {
+                GraphStats_incrementAccessMemory(column_graph->stats, 2); // lecture de a et b
+                GraphStats_incrementComparisons(column_graph->stats);
+            }
+
             if (compare_func(a, b) < 0) {
                 min = j;
             }
@@ -298,6 +375,10 @@ void List_sortSelection(List* list, CompareFunc compare_func, SDL_mutex* gm, Del
         if (min != i) {
             SDL_LockMutex(gm);
             List_swap(list, i, min);
+            if (column_graph && column_graph->stats) {
+                GraphStats_incrementSwaps(column_graph->stats);
+                GraphStats_incrementAccessMemory(column_graph->stats, 3); // coût du swap (temp + 2 écritures)
+            }
             SDL_UnlockMutex(gm);
             if (delay_func) {
                 delay_func(mainframe, column_graph, List_get(list, i), List_get(list, min));

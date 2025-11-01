@@ -114,6 +114,8 @@ typedef struct SortThreadArg SortThreadArg;
 
 typedef struct Checkbox Checkbox;
 
+typedef struct SortArgs SortArgs;
+
 // Frames
 /** @brief The main application frame */
 typedef struct MainFrame MainFrame;

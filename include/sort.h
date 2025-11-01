@@ -7,6 +7,14 @@
 
 #include "Settings.h"
 
+//TODO use sort args struct to reduce parameters
+struct SortArgs {
+    SDL_mutex* gm;
+    DelayFunc delay_func;
+    MainFrame* main_frame;
+    ColumnGraph* column_graph;
+};
+
 int List_defaultCompare(const void* a, const void* b);
 void List_sort(List* list, ListSortType sortType, CompareFunc compare_func, SDL_mutex* gm, DelayFunc, MainFrame* mainframe, ColumnGraph* column_graph);
 bool List_isSorted(List* list, CompareFunc compare_func);

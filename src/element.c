@@ -397,7 +397,11 @@ void Element_setPosition(Element *element, float x, float y) {
         case ELEMENT_TYPE_SELECT:
             Select_setPosition(element->data.select, x, y);
             break;
+        case ELEMENT_TYPE_IMAGE:
+            Image_setPosition(element->data.image, x, y);
+            break;
         default:
+            log_message(LOG_LEVEL_WARN, "Element_setPosition: Unknown element type %d (%s)", element->type, ElementType_toString(element->type));
             break;
     }
 }
@@ -453,7 +457,18 @@ void Element_getPosition(Element* element, float *x, float *y) {
             *x = select->rect.x;
             *y = select->rect.y;
             break;
+        case ELEMENT_TYPE_IMAGE:
+            Image* image = element->data.image;
+            if (image->position) {
+                *x = image->position->x;
+                *y = image->position->y;
+            } else {
+                *x = 0;
+                *y = 0;
+            }
+            break;
         default:
+            log_message(LOG_LEVEL_WARN, "Element_getPosition: Unknown element type %d (%s)", element->type, ElementType_toString(element->type));
             *x = 0;
             *y = 0;
             break;

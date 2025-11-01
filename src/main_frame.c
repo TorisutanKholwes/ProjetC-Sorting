@@ -213,6 +213,13 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
     Button_onClick(loadButton, (EventHandlerFunc) MainFrame_loadFile);
     Container_addChild(container, Element_fromButton(loadButton, NULL));
 
+    Image* help_image = Image_load(self->app, "help_white.svg", Position_new(0, 0), false);
+    Image_setRatio(help_image, 0.05);
+    Size imgSize = Image_getSize(help_image);
+    Image_setPosition(help_image, baseWidth + self->settings_width - imgSize.width - 10, 10);
+
+    Container_addChild(container, Element_fromImage(help_image, "help_image"));
+
     List_push(self->elements, Element_fromContainer(container, "settings"));
 
     if (!self->all_selected) {
@@ -225,10 +232,6 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
             List_push(self->elements, Element_fromBox(box, NULL));
         }
     }
-    Image* help_image = Image_load(self->app, "help_white.svg", Position_new(0, 0), false);
-    Image_setRatio(help_image, 0.05);
-
-    List_push(self->elements, Element_fromImage(help_image, "help_image"));
 
     if (self->graph_info) {
         List_push(self->elements, Element_fromContainer(self->graph_info, "graph_info"));
@@ -796,12 +799,13 @@ static void MainFrame_loadFile(Input* input, SDL_Event* evt, Button* button) {
 static void MainFrame_onClick(Input* input, SDL_Event* evt, MainFrame* self) {
     UNUSED(input);
     UNUSED(evt);
-    if (!self || self->showSettings || self->all_selected || self->graph_info || MainFrame_isGraphSorting(self)) return;
+    if (!self || self->graph_info || MainFrame_isGraphSorting(self)) return;
     float x, y;
     Input_getMousePosition(self->app->input, &x, &y);
 
     if (self->graph_count > 0) {
         for (int i = 0; i < self->graph_count; i++) {
+            if (self->showSettings || self->all_selected) continue;
             if (i == self->selected_graph_index) continue;
             ColumnGraph* graph = self->graph[i];
             SDL_FRect focus_graph_rect = {
@@ -820,7 +824,9 @@ static void MainFrame_onClick(Input* input, SDL_Event* evt, MainFrame* self) {
             }
         }
     }
-    Image* image_help = Element_getById(self->elements, "help_image")->data.image;
+    if (!self->showSettings) return;
+    Container* container = Element_getById(self->elements, "settings")->data.container;
+    Image* image_help = Element_getById(container->children, "help_image")->data.image;
     Size size_help_image = Image_getSize(image_help);
     Position* position_help_image = image_help->position;
     SDL_FRect help_rect = {
@@ -865,8 +871,9 @@ static void MainFrame_onGraphThemeChange(Input* input, SDL_Event* evt, Select* s
 static void MainFrame_onMouseMove(Input* input, SDL_Event* evt, MainFrame* self) {
     UNUSED(input);
     UNUSED(evt);
-    if (!self || self->showSettings || self->graph_info || MainFrame_isGraphSorting(self)) return;
-    Image* img = Element_getById(self->elements, "help_image")->data.image;
+    if (!self || !self->showSettings || self->graph_info || MainFrame_isGraphSorting(self)) return;
+    Container* container = Element_getById(self->elements, "settings")->data.container;
+    Image* img = Element_getById(container->children, "help_image")->data.image;
     Size imgSize = Image_getSize(img);
     SDL_FRect rect = {img->position->x, img->position->y, imgSize.width, imgSize.height};
     if (Input_mouseInRect(self->app->input, rect)) {
@@ -879,7 +886,8 @@ static void MainFrame_onMouseMove(Input* input, SDL_Event* evt, MainFrame* self)
 }
 
 static void MainFrame_updateHelpImage(MainFrame* self) {
-    Image* img = Element_getById(self->elements, "help_image")->data.image;
+    Container* container = Element_getById(self->elements, "settings")->data.container;
+    Image* img = Element_getById(container->children, "help_image")->data.image;
     Image_changePath(img, self->app, "help_white.svg");
 }
 
@@ -1084,5 +1092,4 @@ static void MainFrame_onRuneT(Input* input, SDL_Event* evt, MainFrame* self) {
     if (!self) return;
     UNUSED(input);
     UNUSED(evt);
-    Audio_playSweepingNoise(20, 20000, 10000);
 }

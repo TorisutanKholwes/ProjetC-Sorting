@@ -254,3 +254,14 @@ void Box_getPosition(Box* self, float* x, float* y) {
         *y = self->position->y - (self->size.height / 2);
     }
 }
+
+void Box_setPosition(Box* self, float x, float y) {
+    if (!self) return;
+    if (!self->center) {
+        self->position->x = x;
+        self->position->y = y;
+    } else {
+        self->position->x = x + (self->size.width / 2);
+        self->position->y = y + (self->size.height / 2);
+    }
+}

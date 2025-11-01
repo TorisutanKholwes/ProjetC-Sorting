@@ -7,6 +7,7 @@
 #include "app.h"
 #include "audio.h"
 #include "button.h"
+#include "checkbox.h"
 #include "column_graph.h"
 #include "element.h"
 #include "frame.h"
@@ -58,6 +59,7 @@ static void MainFrame_showTempTextf(MainFrame* self, const char* format, ...);
 static void MainFrame_showCustomSizeTempText(MainFrame* self, int font_size, const char* text);
 static void MainFrame_showCustomSizeTempTextf(MainFrame* self, int font_size, const char* format, ...);
 static void MainFrame_onRuneT(Input* input, SDL_Event* evt, MainFrame* self);
+static void MainFrame_onCheckboxClicked(Input* input, SDL_Event* evt, Checkbox* checkbox);
 
 MainFrame* MainFrame_new(App* app) {
     MainFrame* self = calloc(1, sizeof(MainFrame));
@@ -89,6 +91,8 @@ MainFrame* MainFrame_new(App* app) {
     self->temp_element = NULL;
     self->selected_graph_index = 0;
     self->ui_mutex = SDL_CreateMutex();
+    self->automatic_delay = true;
+    self->delay_ms = 10; // Default delay
     self->graph_style = GRAPH_RAINBOW;
     self->graph_mutexes = calloc(self->graph_count, sizeof(SDL_mutex *));
     for (int i = 0; i < self->graph_count; i++) {
@@ -153,7 +157,7 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
                                       InputBoxStyle_default(self->app->manager),
                                       container);
     InputBox_setStringf(inputBar, "%d", self->bar_count);
-    y += inputHeight + 40;
+    y += inputHeight + 10;
 
     Container_addChild(container, Element_fromText(barText, NULL));
     Container_addChild(container, Element_fromInput(inputBar, "inputBar"));
@@ -190,7 +194,38 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
     Select_onChange(select, (EventHandlerFunc) MainFrame_onGraphThemeChange);
     Container_addChild(container, Element_fromSelect(select, NULL));
 
-    //y += select->rect.h + 40;
+    y += select->rect.h + 40;
+
+    Text* delay_text = Text_new(app->renderer,
+                               TextStyle_new(
+                                   ResourceManager_getDefaultBoldFont(app->manager, 24), 24, COLOR_WHITE,
+                                   TTF_STYLE_NORMAL),
+                               Position_new(baseWidth + 10, y), false, "Manual delay:");
+    Container_addChild(container, Element_fromText(delay_text, NULL));
+
+    Size delaySize = Text_getSize(delay_text);
+    Checkbox* delay_checkbox = Checkbox_new(baseWidth + delaySize.width + 10 + 16, y, 32, COLOR_WHITE, COLOR_WHITE, self->automatic_delay, app->input, container);
+    Checkbox_onChange(delay_checkbox, (EventHandlerFunc) MainFrame_onCheckboxClicked);
+    Container_addChild(container, Element_fromCheckbox(delay_checkbox, NULL));
+    y += delaySize.height + 30;
+
+    if (!delay_checkbox->checked) {
+        Text* select_delay_text = Text_new(app->renderer,
+                                   TextStyle_new(
+                                       ResourceManager_getDefaultBoldFont(app->manager, 20), 20, COLOR_WHITE,
+                                       TTF_STYLE_NORMAL),
+                                   Position_new(baseWidth + 10, y), false, "Delay (ms):");
+        Container_addChild(container, Element_fromText(select_delay_text, NULL));
+        Size selectDelaySize = Text_getSize(select_delay_text);
+        y += selectDelaySize.height + 10;
+        InputBox* input_delay = InputBox_new(self->app,
+                                          SDL_CreateRect(baseWidth + 10, y, self->settings_width - 24, inputHeight,
+                                                         false),
+                                          InputBoxStyle_default(self->app->manager),
+                                          container);
+        InputBox_setStringf(input_delay, "%d", self->delay_ms);
+        Container_addChild(container, Element_fromInput(input_delay, "inputDelay"));
+    }
 
     float buttonXOffset = 20;
     Button* closeButton = Button_new(self->app,
@@ -659,7 +694,9 @@ static void MainFrame_DelaySort(MainFrame* self, ColumnGraph* graph, ColumnGraph
         second->element->data.box->background = COLOR_WHITE;
     }
     ColumnGraph_resetContainer(graph);
-    SDL_Delay(7);
+    //TODO adjust delay based on number of bars
+    int delay = self->automatic_delay ? 7 : self->delay_ms;
+    SDL_Delay(delay);
     if (actual) {
         actual->element->data.box->background = Color_copy(actual->color);
     }
@@ -679,18 +716,24 @@ static void MainFrame_onEnter(Input* input, SDL_Event* evt, MainFrame* self) {
 
     InputBox* inputBar = Element_getById(container->children, "inputBar")->data.input_box;
     InputBox* inputGraph = Element_getById(container->children, "inputGraph")->data.input_box;
+    InputBox* inputDelay = Element_getById(container->children, "inputDelay") ?
+                        Element_getById(container->children, "inputDelay")->data.input_box : NULL;
     if (!String_isNumeric(InputBox_getString(inputBar)) || !String_isNumeric(InputBox_getString(inputGraph))) {
+        return;
+    }
+    if (inputDelay && !String_isNumeric(InputBox_getString(inputDelay))) {
         return;
     }
     int barCount = atoi(InputBox_getString(inputBar));
     int graphCount = atoi(InputBox_getString(inputGraph));
-    if (barCount <= 0 || graphCount <= 0) {
+    int delayMs = inputDelay ? atoi(InputBox_getString(inputDelay)) : self->delay_ms;
+    if (barCount <= 0 || graphCount <= 0 || delayMs < 0) {
         return;
     }
     if (graphCount > MAX_GRAPHS) {
         return;
     }
-    if (self->graph_count == graphCount && self->bar_count == barCount) {
+    if (self->graph_count == graphCount && self->bar_count == barCount && self->delay_ms == delayMs) {
         return;
     }
     if (self->popup) {
@@ -702,6 +745,7 @@ static void MainFrame_onEnter(Input* input, SDL_Event* evt, MainFrame* self) {
     int old_count = self->graph_count;
     self->bar_count = barCount;
     self->graph_count = graphCount;
+    self->delay_ms = delayMs;
     MainFrame_updateGraphs(self, old_count, -1);
 }
 
@@ -1092,4 +1136,15 @@ static void MainFrame_onRuneT(Input* input, SDL_Event* evt, MainFrame* self) {
     if (!self) return;
     UNUSED(input);
     UNUSED(evt);
+}
+
+static void MainFrame_onCheckboxClicked(Input* input, SDL_Event* evt, Checkbox* checkbox) {
+    if (!checkbox) return;
+    UNUSED(input);
+    UNUSED(evt);
+    Container* parent = checkbox->parent;
+    if (!parent || !parent->parent) return;
+    MainFrame* self = parent->parent;
+    self->automatic_delay = Checkbox_isChecked(checkbox);
+    MainFrame_addElements(self, self->app);
 }

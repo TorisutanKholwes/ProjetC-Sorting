@@ -6,6 +6,7 @@
 
 #include "logger.h"
 #include "button.h"
+#include "checkbox.h"
 #include "container.h"
 #include "geometry.h"
 #include "image.h"
@@ -123,6 +124,18 @@ Element* Element_fromSelect(Select* select, const char* id) {
     return element;
 }
 
+Element* Element_fromCheckbox(Checkbox* checkbox, const char* id) {
+    Element* element = calloc(1, sizeof(Element));
+    if (!element) {
+        error("Element_fromCheckbox: Failed to allocate memory for Element");
+        return NULL;
+    }
+    element->type = ELEMENT_TYPE_CHECKBOX;
+    element->id = Strdup(id);
+    element->data.checkbox = checkbox;
+    return element;
+}
+
 void Element_destroy(Element* element) {
     if (!element) return;
 
@@ -153,6 +166,9 @@ void Element_destroy(Element* element) {
             break;
         case ELEMENT_TYPE_SELECT:
             Select_destroy(element->data.select);
+            break;
+        case ELEMENT_TYPE_CHECKBOX:
+            Checkbox_destroy(element->data.checkbox);
             break;
         default:
             log_message(LOG_LEVEL_WARN, "Element_destroy: Unknown element type %d", element->type);
@@ -199,6 +215,9 @@ void Element_render(Element* element, SDL_Renderer* renderer) {
         case ELEMENT_TYPE_SELECT:
             Select_render(element->data.select, renderer);
             break;
+        case ELEMENT_TYPE_CHECKBOX:
+            Checkbox_render(element->data.checkbox, renderer);
+            break;
         default:
             log_message(LOG_LEVEL_WARN, "Element_render: Unknown element type %d", element->type);
             break;
@@ -219,6 +238,9 @@ void Element_update(Element* element) {
             break;
         case ELEMENT_TYPE_SELECT:
             Select_update(element->data.select);
+            break;
+        case ELEMENT_TYPE_CHECKBOX:
+            Checkbox_update(element->data.checkbox);
             break;
         case ELEMENT_TYPE_TEXT:
         case ELEMENT_TYPE_BOX:
@@ -248,6 +270,9 @@ void Element_focus(Element* element) {
         case ELEMENT_TYPE_SELECT:
             Select_focus(element->data.select);;
             break;
+        case ELEMENT_TYPE_CHECKBOX:
+            Checkbox_focus(element->data.checkbox);
+            break;
         case ELEMENT_TYPE_TEXT:
         case ELEMENT_TYPE_BOX:
         case ELEMENT_TYPE_CIRCLE:
@@ -274,6 +299,9 @@ void Element_unfocus(Element* element) {
             break;
         case ELEMENT_TYPE_SELECT:
             Select_unFocus(element->data.select);;
+            break;
+        case ELEMENT_TYPE_CHECKBOX:
+            Checkbox_unFocus(element->data.checkbox);
             break;
         case ELEMENT_TYPE_TEXT:
         case ELEMENT_TYPE_BOX:
@@ -357,6 +385,8 @@ char* ElementType_toString(ElementType type) {
             return "CONTAINER";
         case ELEMENT_TYPE_SELECT:
             return "SELECT";
+        case ELEMENT_TYPE_CHECKBOX:
+            return "CHECKBOX";
         default:
             return "UNKNOWN";
     }
@@ -399,6 +429,9 @@ void Element_setPosition(Element *element, float x, float y) {
             break;
         case ELEMENT_TYPE_IMAGE:
             Image_setPosition(element->data.image, x, y);
+            break;
+        case ELEMENT_TYPE_CHECKBOX:
+            Checkbox_setPosition(element->data.checkbox, x, y);
             break;
         default:
             log_message(LOG_LEVEL_WARN, "Element_setPosition: Unknown element type %d (%s)", element->type, ElementType_toString(element->type));
@@ -467,6 +500,17 @@ void Element_getPosition(Element* element, float *x, float *y) {
                 *y = 0;
             }
             break;
+        case ELEMENT_TYPE_CHECKBOX: {
+            Checkbox* checkbox = element->data.checkbox;
+            if (checkbox->position) {
+                *x = checkbox->position->x;
+                *y = checkbox->position->y;
+            } else {
+                *x = 0;
+                *y = 0;
+            }
+            break;
+        }
         default:
             log_message(LOG_LEVEL_WARN, "Element_getPosition: Unknown element type %d (%s)", element->type, ElementType_toString(element->type));
             *x = 0;

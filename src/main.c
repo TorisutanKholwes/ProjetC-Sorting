@@ -124,22 +124,28 @@ int main() {
 #endif
 
 #if 0
-int generateRandomNumber(int min, int max) {
-    return rand() % (max - min + 1) + min;
-}
-
 int main() {
-    srand(time(NULL));
-    int len = generateRandomNumber(10, 200);
-    int* values = calloc(len, sizeof(int));
-    for (int i = 0; i < len; i++) {
-        values[i] = generateRandomNumber(1, 100);
+    FILE* file = tempFile("../assets/images/checkmark.svg");
+    if (!file) {
+        return EXIT_FAILURE;
     }
-    printf("%d\n", len);
-    for (int i = 0; i < len; i++) {
-        printf("%d\n", values[i]);
+    remplaceDataInFile(file, "000000", "FF0000");
+
+    // For testing: write the temp file to disk to verify the changes
+    FILE* outFile = fopen("modified_checkmark.svg", "wb");
+    if (!outFile) {
+        error("Failed to open output file for writing modified SVG");
+        fclose(file);
+        return EXIT_FAILURE;
     }
-    safe_free((void**)&values);
+    char buffer[8192];
+    size_t bytes;
+    rewind(file);
+    while ((bytes = fread(buffer, 1, sizeof(buffer), file)) > 0) {
+        fwrite(buffer, 1, bytes, outFile);
+    }
+    fclose(outFile);
+    fclose(file);
 
     return EXIT_SUCCESS;
 }

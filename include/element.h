@@ -19,7 +19,8 @@ enum ElementType {
 
     ELEMENT_TYPE_IMAGE,
 
-    ELEMENT_TYPE_CONTAINER
+    ELEMENT_TYPE_CONTAINER,
+    ELEMENT_TYPE_CHECKBOX
 };
 
 /**
@@ -60,6 +61,7 @@ struct Element {
         Image* image;
         Container* container;
         Select* select;
+        Checkbox* checkbox;
     } data;
 };
 
@@ -152,6 +154,16 @@ Element* Element_fromContainer(Container* container, const char* id);
  * @return A pointer to the created Element.
  */
 Element* Element_fromSelect(Select* select, const char* id);
+
+/**
+ * @brief Creates an Element from a Checkbox.
+ *
+ * @param checkbox - The Checkbox to wrap.
+ * @param id  - The unique identifier for the element or NULL if not needed.
+ *
+ * @return A pointer to the created Element.
+ */
+Element* Element_fromCheckbox(Checkbox* checkbox, const char* id);
 
 /**
  * @brief Destroys an Element and frees its resources.

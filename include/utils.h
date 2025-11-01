@@ -30,6 +30,7 @@ Color* interpolateColor(Color* start, Color* end, float t);
 bool Color_equals(const Color* a, const Color* b);
 Color* Color_fromHex(const char* hex);
 void Color_destroy(Color* color);
+const char* Color_toHex(const Color* color);
 
 void safe_free(void** ptr);
 void safe_freeArray(void** arr, int len);
@@ -37,6 +38,7 @@ int init();
 #define SDL_RECT_NULL (SDL_FRect) { -1.0f, -1.0f, -1.0f, -1.0f }
 SDL_FRect SDL_CreateRect(float x, float y, float w, float h, bool from_center);
 void SDL_RenderStroke(SDL_Renderer* renderer, const SDL_FRect* rect, float thickness);
+void SDL_drawThickLine(SDL_Renderer* renderer, float x1, float y1, float x2, float y2, float thickness);
 
 char* Strdup(const char* str);
 bool String_isNullOrEmpty(const char* str);
@@ -62,3 +64,4 @@ void** longToVoidArray(const long* arr, int len);
 void** intToVoidArray(const int* arr, int len);
 
 bool is_power_of_two(int n);
+void SDL_RenderRotateFillRect(SDL_Renderer* renderer, const SDL_FRect* rect, float angle, Color* color);

@@ -35,6 +35,9 @@ struct MainFrame {
 
     bool hovered_help;
 
+    bool automatic_delay;
+    int delay_ms;
+
     bool* graph_sorting;
 
     SDL_mutex* ui_mutex;

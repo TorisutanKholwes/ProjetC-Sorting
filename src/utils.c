@@ -98,6 +98,25 @@ void SDL_RenderStroke(SDL_Renderer* renderer, const SDL_FRect* rect, const float
     SDL_RenderFillRectF(renderer, &right);
 }
 
+void SDL_drawThickLine(SDL_Renderer* renderer,
+                                  float x1, float y1,
+                                  float x2, float y2,
+                                  float thickness) {
+    float dx = x2 - x1;
+    float dy = y2 - y1;
+    float len = sqrtf(dx * dx + dy * dy);
+    if (len == 0) return;
+    float nx = -dy / len;
+    float ny = dx / len;
+    for (int b = -((int)(thickness / 2)); b <= (int)(thickness / 2); b++) {
+        float ox = nx * b;
+        float oy = ny * b;
+        SDL_RenderDrawLine(renderer, x1 + ox, y1 + oy, x2 + ox, y2 + oy);
+    }
+}
+
+
+
 Color* Color_rgb(const int r, const int g, const int b) {
     return Color_rgba(r, g, b, 255);
 }
@@ -146,6 +165,12 @@ Color* Color_hsv(float h, float s, float v) {
 void Color_destroy(Color* color) {
     if (!color) return;
     safe_free((void**)&color);
+}
+
+const char* Color_toHex(const Color* color) {
+    if (!color) return NULL;
+    char* hex = String_format("#%02X%02X%02X%02X", color->r, color->g, color->b, color->a);
+    return hex;
 }
 
 Color* Color_copy(Color* color) {
@@ -399,4 +424,29 @@ void** intToVoidArray(const int* arr, int len) {
 
 bool is_power_of_two(int n) {
     return (n > 0) && ((n & (n - 1)) == 0);
+}
+
+void SDL_RenderRotateFillRect(SDL_Renderer* renderer, const SDL_FRect* rect, float angle, Color* color) {
+    if (!renderer) return;
+
+    SDL_Texture* tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
+                                                 SDL_TEXTUREACCESS_STATIC, 1, 1);
+    if (!tex) {
+        return;
+    }
+    Uint32 white = 0xFFFFFFFF;
+    SDL_UpdateTexture(tex, NULL, &white, sizeof(Uint32));
+    SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
+    SDL_SetTextureColorMod(tex, color->r, color->g, color->b);
+    SDL_SetTextureAlphaMod(tex, color->a);
+
+    SDL_Rect dst = {
+        (int)rect->x,
+        (int)rect->y,
+        (int)rect->w,
+        (int)rect->h
+    };
+    SDL_Point center = { dst.w / 2, dst.h / 2 };
+    SDL_RenderCopyEx(renderer, tex, NULL, &dst, angle, &center, SDL_FLIP_NONE);
+    SDL_DestroyTexture(tex);
 }

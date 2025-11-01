@@ -21,6 +21,7 @@ void Box_destroy(Box* self);
 void Box_render(Box* self, SDL_Renderer* renderer);
 void Box_setBorder(Box* self, int border_size, Color* border_color);
 void Box_getPosition(Box* self, float* x, float* y);
+void Box_setPosition(Box* self, float x, float y);
 
 struct Circle {
     int radius;

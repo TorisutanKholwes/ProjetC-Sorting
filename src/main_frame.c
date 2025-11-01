@@ -91,7 +91,7 @@ MainFrame* MainFrame_new(App* app) {
     self->selected_graph_index = 0;
     self->ui_mutex = SDL_CreateMutex();
     self->automatic_delay = true;
-    self->delay_ms = 10; // Default delay
+    self->delay_ms = 7; // Default delay
     self->graph_style = GRAPH_RAINBOW;
     self->graph_mutexes = calloc(self->graph_count, sizeof(SDL_mutex *));
     for (int i = 0; i < self->graph_count; i++) {

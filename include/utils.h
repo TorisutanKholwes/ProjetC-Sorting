@@ -50,6 +50,7 @@ bool String_isNumeric(const char* str);
 char* String_max(const char** arr, int len);
 char* String_min(const char** arr, int len);
 int String_compare(const char* a, const char* b);
+char* String_formatTime(Uint32 milliseconds);
 
 int modulo(int a, int b);
 long arrayMax(const long* arr, int len);

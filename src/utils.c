@@ -370,6 +370,43 @@ int String_compare(const char* a, const char* b) {
     return strlen(a) - strlen(b);
 }
 
+char* String_formatTime(const Uint32 milliseconds) {
+    if (milliseconds == 0) {
+        return String_format("0s");
+    }
+
+    Uint32 total_ms = milliseconds;
+    Uint32 total_sec = total_ms / 1000;
+    Uint32 ms = total_ms % 1000;
+    Uint32 hours = total_sec / 3600;
+    Uint32 minutes = (total_sec % 3600) / 60;
+    Uint32 seconds = total_sec % 60;
+    if (hours > 0) {
+        if (minutes > 0 && seconds > 0) {
+            return String_format("%uh %um %us", hours, minutes, seconds);
+        }
+        if (minutes > 0) {
+            return String_format("%uh %um", hours, minutes);
+        }
+        if (seconds > 0) {
+            return String_format("%uh %us", hours, seconds);
+        }
+        return String_format("%uh", hours);
+    }
+    if (minutes > 0) {
+        if (seconds > 0) {
+            return String_format("%um %us", minutes, seconds);
+        }
+        return String_format("%um", minutes);
+    }
+    if (seconds <= 0) {
+        return String_format("%ums", ms);
+    }
+    float secf = seconds + (ms / 1000.0f);
+    if (secf < 0.01f) secf = 0.0f;
+    return String_format("%.2fs", secf);
+}
+
 int* voidToIntArray(void** arr, int len) {
     if (!arr || len <= 0) return NULL;
     int* intArr = calloc(len, sizeof(int));

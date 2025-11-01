@@ -82,7 +82,7 @@ static void ColumnGraph_initGraphStatsContainer(ColumnGraph* graph) {
         stat_text_style,
         Position_new(graph->position->x + 10, y),
         false,
-        "Sort Time: %.2fs", (float) graph->stats->sort_time / 1000.f);
+        "Sort Time: %s", String_formatTime(graph->stats->sort_time));
     text_size = Text_getSize(sort_time_text);
     y += text_size.height + y_offset;
 

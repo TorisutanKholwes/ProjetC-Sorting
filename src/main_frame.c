@@ -5,7 +5,6 @@
 #include "main_frame.h"
 
 #include "app.h"
-#include "audio.h"
 #include "button.h"
 #include "checkbox.h"
 #include "column_graph.h"
@@ -97,9 +96,9 @@ MainFrame* MainFrame_new(App* app) {
     self->graph_mutexes = calloc(self->graph_count, sizeof(SDL_mutex *));
     for (int i = 0; i < self->graph_count; i++) {
         self->graph_mutexes[i] = SDL_CreateMutex();
-        self->graph[i] = ColumnGraph_new(w, h, Position_new(0, 0), app->input, self, GRAPH_TYPE_INT,
+        self->graph[i] = ColumnGraph_new(w, h, Position_new(0, 0), app, self, GRAPH_TYPE_INT,
                                          (ColumnsHoverFunc) MainFrame_createPopup,
-                                         (ColumnsHoverFunc) MainFrame_removePopup);
+                                         (ColumnsHoverFunc) MainFrame_removePopup, i);
         ColumnGraph_initBarsIncrement(self->graph[i], self->bar_count, self->graph_style);
     }
     self->graph_sorting = calloc(self->graph_count, sizeof(bool));
@@ -358,6 +357,12 @@ void MainFrame_update(MainFrame* self) {
         Timer_stop(self->timer);
         return;
     }
+    for (int i = 0; i < self->graph_count; i++) {
+        SDL_mutex* gm = self->graph_mutexes[i];
+        SDL_LockMutex(gm);
+        ColumnGraph_update(self->graph[i]);
+        SDL_UnlockMutex(gm);
+    }
 
     Element_updateList(self->elements);
 }
@@ -555,9 +560,9 @@ static void MainFrame_updateGraphs(MainFrame* self, int old_count, int old_bar_c
             values = old_graphs_values[i];
             colors = old_graphs_colors[i];
         }
-        self->graph[i] = ColumnGraph_new(width, height, Position_new(x, y), self->app->input, self, type,
+        self->graph[i] = ColumnGraph_new(width, height, Position_new(x, y), self->app, self, type,
                                          (ColumnsHoverFunc) MainFrame_createPopup,
-                                         (ColumnsHoverFunc) MainFrame_removePopup);
+                                         (ColumnsHoverFunc) MainFrame_removePopup, i);
         if (values) {
             ColumnGraph_initBarsColored(self->graph[i], self->bar_count, values, colors);
             ColumnGraph_setSortType(self->graph[i], old_graphs_sort_types[i]);

@@ -102,6 +102,7 @@ typedef struct Image Image;
 typedef struct ColumnGraph ColumnGraph;
 /** @brief A bar within a column graph */
 typedef struct ColumnGraphBar ColumnGraphBar;
+typedef struct GraphStats GraphStats;
 
 /** @brief A container for grouping UI elements */
 typedef struct Container Container;

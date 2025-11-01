@@ -13,12 +13,17 @@ struct ColumnGraph {
     List* bars;
     FlexContainer* container;
     void* parent;
+    int graph_index;
 
-    Input* input;
+    App* app;
     bool hovered;
 
     bool paused;
     bool sort_in_progress;
+    Timer* sort_timer;
+
+    GraphStats* stats;
+    Container* stats_container;
 
     ListSortType sort_type;
 
@@ -31,8 +36,9 @@ struct ColumnGraph {
     ColumnsHoverFunc offHover;
 };
 
-ColumnGraph* ColumnGraph_new(float width, float height, Position* position, Input* input, void* parent, ColumnGraphType type, ColumnsHoverFunc onHover, ColumnsHoverFunc offHover);
+ColumnGraph* ColumnGraph_new(float width, float height, Position* position, App* app, void* parent, ColumnGraphType type, ColumnsHoverFunc onHover, ColumnsHoverFunc offHover, int index);
 void ColumnGraph_destroy(ColumnGraph* graph);
+void ColumnGraph_update(ColumnGraph* graph);
 void ColumnGraph_initBars(ColumnGraph* graph, int bars_count, void** values, ColumnGraphStyle style);
 void ColumnGraph_initBarsColored(ColumnGraph* graph, int bars_count, void** values, Color** colors);
 void ColumnGraph_initBarsIncrement(ColumnGraph* graph, int bars_count, ColumnGraphStyle style);

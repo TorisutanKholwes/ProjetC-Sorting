@@ -2,20 +2,29 @@
  * Copyright (c) 2025 Torisutan
  * ALl rights reserved
  */
-#include "color.h"
 #include "column_graph.h"
+
+#include "app.h"
+#include "color.h"
+#include "container.h"
 #include "element.h"
 #include "geometry.h"
 #include "input.h"
 #include "layout.h"
 #include "list.h"
 #include "logger.h"
+#include "resource_manager.h"
 #include "sort.h"
+#include "stats.h"
+#include "style.h"
+#include "text.h"
+#include "timer.h"
 #include "utils.h"
 
 static void ColumnGraph_handleMouseMotion(Input* input, SDL_Event* evt, ColumnGraph* graph);
+static void ColumnGraph_initGraphStatsContainer(ColumnGraph* graph);
 
-ColumnGraph* ColumnGraph_new(float width, float height, Position* position, Input* input, void* parent, ColumnGraphType type, ColumnsHoverFunc onHover, ColumnsHoverFunc offHover) {
+ColumnGraph* ColumnGraph_new(float width, float height, Position* position, App* app, void* parent, ColumnGraphType type, ColumnsHoverFunc onHover, ColumnsHoverFunc offHover, int index) {
     ColumnGraph* graph = calloc(1, sizeof(ColumnGraph));
     if (!graph) {
         error("Failed to allocate memory for ColumnGraph");
@@ -24,10 +33,13 @@ ColumnGraph* ColumnGraph_new(float width, float height, Position* position, Inpu
     graph->size.width = width;
     graph->size.height = height;
     graph->position = position;
-    graph->input = input;
+    graph->app = app;
     graph->type = type;
+    graph->graph_index = index;
     graph->bars_count = 0;
     graph->parent = parent;
+    graph->stats = GraphStats_new();
+    graph->sort_timer = Timer_new();
     graph->sort_type = LIST_SORT_TYPE_BUBBLE;
     graph->bars = List_create();
     graph->container = FlexContainer_new(position->x, position->y, width, height);
@@ -35,8 +47,68 @@ ColumnGraph* ColumnGraph_new(float width, float height, Position* position, Inpu
     graph->offHover = offHover;
     FlexContainer_setAlignItems(graph->container, NO_FLEX_ALIGN);
 
-    Input_addEventHandler(input, SDL_MOUSEMOTION, (EventHandlerFunc) ColumnGraph_handleMouseMotion, graph);
+    Input_addEventHandler(app->input, SDL_MOUSEMOTION, (EventHandlerFunc) ColumnGraph_handleMouseMotion, graph);
+    ColumnGraph_initGraphStatsContainer(graph);
     return graph;
+}
+
+static void ColumnGraph_initGraphStatsContainer(ColumnGraph* graph) {
+    if (graph->stats_container) {
+        Container_destroy(graph->stats_container);
+    }
+    graph->stats_container = Container_new(graph->position->x, graph->position->y, fminf(250.f, graph->size.width / 2.5f), fminf(150.f, graph->size.height / 2.f), false, Color_rgba(0, 0, 0, 150), graph);
+    bool max_width = graph->stats_container->box->size.width == 250.f;
+    UNUSED(max_width);
+    bool max_height = graph->stats_container->box->size.height == 150.f;
+    int y = graph->position->y + 10;
+    Size text_size;
+    if (max_height) {
+        Text* title = Text_newf(graph->app->renderer,
+            TextStyle_new(ResourceManager_getDefaultBoldFont(graph->app->manager, 18), 18, COLOR_WHITE, TTF_STYLE_NORMAL),
+            Position_new(graph->position->x + 10, y),
+            false,
+            "Graph %d Stats :", graph->graph_index + 1);
+        Container_addChild(graph->stats_container, Element_fromText(title, NULL));
+        text_size = Text_getSize(title);
+        y += text_size.height + 10;
+    }
+    int y_offset = max_height ? 10 : graph->stats_container->box->size.height < 100.f ? 0 : 5;
+    int font_size = max_height ? 14 : graph->stats_container->box->size.height < 100.f ? 12 : 13;
+    TextStyle* stat_text_style = TextStyle_new(ResourceManager_getDefaultFont(graph->app->manager, font_size), font_size, COLOR_WHITE, TTF_STYLE_NORMAL);
+    Text* sort_time_text = Text_newf(graph->app->renderer,
+        stat_text_style,
+        Position_new(graph->position->x + 10, y),
+        false,
+        "Sort Time: %.2fs", (float) graph->stats->sort_time / 1000.f);
+    text_size = Text_getSize(sort_time_text);
+    y += text_size.height + y_offset;
+
+    Text* comparisons_text = Text_newf(graph->app->renderer,
+        TextStyle_deepCopy(stat_text_style),
+        Position_new(graph->position->x + 10, y),
+        false,
+        "Comparisons: %d", graph->stats->comparisons);
+    text_size = Text_getSize(comparisons_text);
+    y += text_size.height + y_offset;
+
+    Text* swaps_text = Text_newf(graph->app->renderer,
+        TextStyle_deepCopy(stat_text_style),
+        Position_new(graph->position->x + 10, y),
+        false,
+        "Swaps: %d", graph->stats->swaps);
+    text_size = Text_getSize(swaps_text);
+    y += text_size.height + y_offset;
+
+    Text* access_memory_text = Text_newf(graph->app->renderer,
+        TextStyle_deepCopy(stat_text_style),
+        Position_new(graph->position->x + 10, y),
+        false,
+        "Memory Access: %d", graph->stats->access_memory);
+
+    Container_addChild(graph->stats_container, Element_fromText(sort_time_text, NULL));
+    Container_addChild(graph->stats_container, Element_fromText(comparisons_text, NULL));
+    Container_addChild(graph->stats_container, Element_fromText(swaps_text, NULL));
+    Container_addChild(graph->stats_container, Element_fromText(access_memory_text, NULL));
 }
 
 void ColumnGraph_destroy(ColumnGraph* graph) {
@@ -46,12 +118,20 @@ void ColumnGraph_destroy(ColumnGraph* graph) {
         ColumnGraphBar* bar = (ColumnGraphBar*)ListIterator_next(it);
         ColumnGraphBar_destroy(bar);
     }
-    Input_removeOneEventHandler(graph->input, SDL_MOUSEMOTION, graph);
+    Input_removeOneEventHandler(graph->app->input, SDL_MOUSEMOTION, graph);
     ListIterator_destroy(it);
     List_destroy(graph->bars);
     FlexContainer_destroy(graph->container);
     safe_free((void**)&graph->position);
     safe_free((void**)&graph);
+}
+
+void ColumnGraph_update(ColumnGraph* graph) {
+    if (!graph) return;
+    if (graph->sort_in_progress) {
+        GraphStats_setSortTime(graph->stats, Timer_getTicks(graph->sort_timer));
+        ColumnGraph_initGraphStatsContainer(graph);
+    }
 }
 
 void ColumnGraph_initBars(ColumnGraph* graph, const int bars_count, void** values, ColumnGraphStyle style) {
@@ -125,6 +205,7 @@ void ColumnGraph_initBarsColored(ColumnGraph* graph, int bars_count, void** valu
     }
     FlexContainer_layout(graph->container);
 }
+
 void ColumnGraph_initBarsIncrement(ColumnGraph* graph, int bars_count, ColumnGraphStyle style) {
     if (!graph || graph->type != GRAPH_TYPE_INT) return;
     long* values = calloc(bars_count, sizeof(long));
@@ -174,7 +255,10 @@ void ColumnGraph_resetContainer(ColumnGraph* graph) {
 
 void ColumnGraph_sortGraph(ColumnGraph* graph, SDL_mutex* gm, DelayFunc delay_func, MainFrame* main_frame) {
     if (!graph) return;
+    GraphStats_reset(graph->stats);
+    Timer_start(graph->sort_timer);
     List_sort(graph->bars, graph->sort_type, ColumnGraphBar_compare, gm, delay_func, main_frame, graph);
+    Timer_stop(graph->sort_timer);
     FlexContainer_clear(graph->container);
     ListIterator* it = ListIterator_new(graph->bars);
     while (ListIterator_hasNext(it)) {
@@ -230,6 +314,7 @@ void ColumnGraph_render(ColumnGraph* graph, SDL_Renderer* renderer) {
         Element_render(bar->element, renderer);
     }
     ListIterator_destroy(it);
+    Container_render(graph->stats_container, renderer);
 }
 
 void** ColumnGraph_getValues(ColumnGraph* graph, int* out_len) {

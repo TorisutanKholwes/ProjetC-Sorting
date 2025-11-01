@@ -955,9 +955,7 @@ static void MainFrame_onWindowResize(Input* input, SDL_Event* evt, MainFrame* se
         SDL_SetWindowSize(self->app->window, WINDOW_WIDTH, WINDOW_HEIGHT);
         return;
     }
-    for (int i = 0; i < self->graph_count; i++) {
-        ColumnGraph_renderBar(self->graph[i], w, h);
-    }
+    MainFrame_updateGraphs(self, self->graph_count, self->bar_count);
     MainFrame_addElements(self, self->app);
 }
 

@@ -56,7 +56,7 @@ static void ColumnGraph_initGraphStatsContainer(ColumnGraph* graph) {
     if (graph->stats_container) {
         Container_destroy(graph->stats_container);
     }
-    graph->stats_container = Container_new(graph->position->x, graph->position->y, fminf(250.f, graph->size.width / 2.5f), fminf(150.f, graph->size.height / 2.f), false, Color_rgba(0, 0, 0, 150), graph);
+    graph->stats_container = Container_new(graph->position->x, graph->position->y, fminf(275.f, graph->size.width / 2.5f), fminf(150.f, graph->size.height / 2.f), false, Color_rgba(0, 0, 0, 150), graph);
     bool max_width = graph->stats_container->box->size.width == 250.f;
     UNUSED(max_width);
     bool max_height = graph->stats_container->box->size.height == 150.f;
@@ -64,12 +64,15 @@ static void ColumnGraph_initGraphStatsContainer(ColumnGraph* graph) {
     Size text_size;
     if (max_height) {
         Text* title = Text_newf(graph->app->renderer,
-            TextStyle_new(ResourceManager_getDefaultBoldFont(graph->app->manager, 18), 18, COLOR_WHITE, TTF_STYLE_NORMAL),
+            TextStyle_new(ResourceManager_getDefaultBoldFont(graph->app->manager, 16), 16, COLOR_WHITE, TTF_STYLE_NORMAL),
             Position_new(graph->position->x + 10, y),
             false,
-            "Graph %d Stats :", graph->graph_index + 1);
+            "Graph %d Stats (%s) :", graph->graph_index + 1, ListSortType_toString(graph->sort_type));
         Container_addChild(graph->stats_container, Element_fromText(title, NULL));
         text_size = Text_getSize(title);
+        if (text_size.width > graph->stats_container->box->size.width - 20) {
+            Text_setStringf(title, "Graph %d Stats :", graph->graph_index + 1);
+        }
         y += text_size.height + 10;
     }
     int y_offset = max_height ? 10 : graph->stats_container->box->size.height < 100.f ? 0 : 5;
@@ -130,8 +133,8 @@ void ColumnGraph_update(ColumnGraph* graph) {
     if (!graph) return;
     if (graph->sort_in_progress) {
         GraphStats_setSortTime(graph->stats, Timer_getTicks(graph->sort_timer));
-        ColumnGraph_initGraphStatsContainer(graph);
     }
+    ColumnGraph_initGraphStatsContainer(graph);
 }
 
 void ColumnGraph_initBars(ColumnGraph* graph, const int bars_count, void** values, ColumnGraphStyle style) {

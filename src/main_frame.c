@@ -589,9 +589,6 @@ static void MainFrame_onRuneP(Input* input, SDL_Event* evt, MainFrame* self) {
         }
     }
     self->graph_count++;
-    /*for (int i = 0; i < self->graph_count - 1; i++) {
-        ColumnGraph_destroy(self->graph[i]);
-    }*/
     MainFrame_updateGraphs(self, self->graph_count - 1, self->bar_count);
 }
 
@@ -609,9 +606,6 @@ static void MainFrame_onRuneM(Input* input, SDL_Event* evt, MainFrame* self) {
             self->selected_graph_index--;
         }
         self->graph_count--;
-        /*for (int i = 0; i < self->graph_count + 1; i++) {
-            ColumnGraph_destroy(self->graph[i]);
-        }*/
         MainFrame_updateGraphs(self, self->graph_count + 1, self->bar_count);
     }
 }

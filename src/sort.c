@@ -341,8 +341,9 @@ void List_sortBogo(List* list, CompareFunc compare_func, SDL_mutex* gm, DelayFun
     if (!compare_func) {
         compare_func = List_defaultCompare;
     }
+    bool sorted = false;
 
-    while (!List_isSorted(list, compare_func)) {
+    while (!sorted) {
         SDL_LockMutex(gm);
         List_shuffle(list);
         if (column_graph && column_graph->stats) {
@@ -351,6 +352,19 @@ void List_sortBogo(List* list, CompareFunc compare_func, SDL_mutex* gm, DelayFun
         SDL_UnlockMutex(gm);
         if (delay_func) {
             delay_func(mainframe, column_graph, NULL, NULL);
+        }
+        sorted = true;
+        ListNode* node = list->head->next;
+        while (node->next != list->head) {
+            if (compare_func(node->value, node->next->value) > 0) {
+                sorted = false;
+                break;
+            }
+            node = node->next;
+            if (column_graph && column_graph->stats) {
+                GraphStats_incrementAccessMemory(column_graph->stats, 2);
+                GraphStats_incrementComparisons(column_graph->stats);
+            }
         }
     }
 }

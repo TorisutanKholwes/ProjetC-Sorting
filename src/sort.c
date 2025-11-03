@@ -401,6 +401,71 @@ void List_sortSelection(List* list, CompareFunc compare_func, SDL_mutex* gm, Del
     }
 }
 
+
+void List_sortRadix(List* list, CompareFunc compare_func, SDL_mutex* gm, DelayFunc delay_func, MainFrame* mainframe, ColumnGraph* column_graph) {
+    if (column_graph->type != GRAPH_TYPE_INT) {
+        log_message(LOG_LEVEL_WARN, "Radix sort only supports integer lists.");
+        return;
+    }
+    ColumnGraphBar* max_bar = List_max(list, compare_func);
+    if (column_graph->stats) {
+        column_graph->stats->comparisons += (long)list->size - 1;
+    }
+
+    if (!max_bar) {
+        error("Failed to find max value for radix sort");
+        return;
+    }
+    long max_value = (long)max_bar->value;
+    for (long exp = 1; max_value / exp > 0; exp*=10) {
+        List* output = List_create();
+        for (int i = 0; i < (int)list->size; i++) {
+            List_push(output, 0);
+            if (column_graph->stats) {
+                GraphStats_incrementAccessMemory(column_graph->stats, 1);
+            }
+        }
+        long count[10] = { 0 };
+        for (size_t i = 0; i < list->size; i++ ) {
+            ColumnGraphBar* bar = List_get(list, i);
+            if (column_graph->stats) {
+                GraphStats_incrementAccessMemory(column_graph->stats, 1);
+            }
+            int idx = ((long)bar->value / exp) % 10;
+            count[idx]++;
+            if (column_graph->stats) {
+                GraphStats_incrementAccessMemory(column_graph->stats, 1);
+            }
+        }
+        for (int i = 1; i < 10; i++) {
+            count[i] += count[i - 1];
+            if (column_graph->stats) {
+                GraphStats_incrementAccessMemory(column_graph->stats, 1);
+            }
+        }
+        for (int i = list->size - 1; i >= 0; i--) {
+            ColumnGraphBar* bar = List_get(list, i);
+            List_set(output, count[((long)bar->value / exp) % 10] - 1, List_get(list, i));
+            count[((long)bar->value / exp) % 10]--;
+            if (column_graph->stats) {
+                GraphStats_incrementAccessMemory(column_graph->stats, 2);
+            }
+        }
+        for (size_t i = 0; i < list->size; i++) {
+            SDL_LockMutex(gm);
+            List_set(list, i, List_get(output, i));
+            if (column_graph->stats) {
+                GraphStats_incrementAccessMemory(column_graph->stats, 1);
+            }
+            SDL_UnlockMutex(gm);
+            if (delay_func) {
+                delay_func(mainframe, column_graph, List_get(list, i), NULL);
+            }
+        }
+        List_destroy(output);
+    }
+}
+
 void List_sort(List* list, ListSortType sortType, CompareFunc compare_func, SDL_mutex* gm, DelayFunc delay_func , MainFrame* mainframe, ColumnGraph* column_graph) {
     switch (sortType) {
         case LIST_SORT_TYPE_BUBBLE:
@@ -424,6 +489,9 @@ void List_sort(List* list, ListSortType sortType, CompareFunc compare_func, SDL_
         case LIST_SORT_TYPE_SELECTION:
             List_sortSelection(list, compare_func, gm, delay_func, mainframe, column_graph);
             break;
+        case LIST_SORT_TYPE_RADIX:
+            List_sortRadix(list, compare_func, gm, delay_func, mainframe, column_graph);
+            break;
         default:
             log_message(LOG_LEVEL_WARN, "Unknown ListSortType: %d", sortType);
             break;
@@ -446,6 +514,8 @@ const char* ListSortType_toString(ListSortType sortType) {
             return "Bogo Sort";
         case LIST_SORT_TYPE_SELECTION:
             return "Selection Sort";
+        case LIST_SORT_TYPE_RADIX:
+            return "Radix Sort";
         default:
             return "Unknown Sort Type";
     }

@@ -127,6 +127,9 @@ void ColumnGraph_destroy(ColumnGraph* graph) {
     ListIterator_destroy(it);
     List_destroy(graph->bars);
     FlexContainer_destroy(graph->container);
+    if (graph->stats_container) {
+        Container_destroy(graph->stats_container);
+    }
     safe_free((void**)&graph->position);
     safe_free((void**)&graph);
 }
@@ -146,6 +149,16 @@ void ColumnGraph_initBars(ColumnGraph* graph, const int bars_count, void** value
 
     int numColors;
     Color** colors = ColumnGraph_getDefaultColors(style, &numColors);
+
+    if (graph->bars) {
+        ListIterator *it = ListIterator_new(graph->bars);
+        while (ListIterator_hasNext(it)) {
+            ColumnGraphBar* bar = (ColumnGraphBar*)ListIterator_next(it);
+            ColumnGraphBar_destroy(bar);
+        }
+        ListIterator_destroy(it);
+        List_clear(graph->bars);
+    }
 
     void* max;
     switch (graph->type) {
@@ -313,10 +326,19 @@ void ColumnGraph_renderBar(ColumnGraph* graph, int w, int h) {
 void ColumnGraph_render(ColumnGraph* graph, SDL_Renderer* renderer) {
     if (!graph || !renderer) return;
     ListIterator* it = ListIterator_new(graph->bars);
+    int index = 0;
     while (ListIterator_hasNext(it)) {
         ColumnGraphBar* bar = (ColumnGraphBar*)ListIterator_next(it);
-        if (!bar) continue;
+        if (!bar) {
+            continue;
+        }
+        Box* box = bar->element->data.box;
+        if (!box) {
+            continue;
+        }
+        box->position->x = graph->position->x + index * (graph->size.width / graph->bars_count);
         Element_render(bar->element, renderer);
+        index++;
     }
     ListIterator_destroy(it);
     Container_render(graph->stats_container, renderer);

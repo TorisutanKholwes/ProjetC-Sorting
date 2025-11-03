@@ -34,7 +34,6 @@ static void MainFrame_onEscape(Input* input, SDL_Event* evt, MainFrame* self);
 static void MainFrame_onRuneS(Input* input, SDL_Event* evt, MainFrame* self);
 static void MainFrame_onRuneP(Input* input, SDL_Event* evt, MainFrame* self);
 static void MainFrame_onRuneM(Input* input, SDL_Event* evt, MainFrame* self);
-static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self);
 static void MainFrame_DelaySort(MainFrame* self, ColumnGraph* graph, ColumnGraphBar* actual, ColumnGraphBar* second);
 static void MainFrame_onEnter(Input* input, SDL_Event* evt, MainFrame* self);
 static void MainFrame_onClick(Input* input, SDL_Event* evt, MainFrame* self);
@@ -42,6 +41,7 @@ static bool MainFrame_createPopup(MainFrame* self, void* value, ColumnGraphType 
 static bool MainFrame_removePopup(MainFrame* self, void* value, ColumnGraphType type);
 static void MainFrame_quitApp(Input* input, SDL_Event* evt, Button* button);
 static void MainFrame_loadFile(Input* input, SDL_Event* evt, Button* button);
+static void MainFrame_onSpace(Input* input, SDL_Event* evt, MainFrame* self);
 static void MainFrame_onRuneA(Input* input, SDL_Event* evt, MainFrame* self);
 static void MainFrame_onGraphThemeChange(Input* input, SDL_Event* evt, Select* select);
 static void MainFrame_onMouseMove(Input* input, SDL_Event* evt, MainFrame* self);
@@ -287,9 +287,9 @@ void MainFrame_destroy(MainFrame* self) {
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_S, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_P, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_SEMICOLON, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_A, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_RETURN, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_Q, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_RETURN, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_SPACE, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_I, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_O, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_B, self);
@@ -379,7 +379,7 @@ void MainFrame_focus(MainFrame* self) {
     Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_S, (EventHandlerFunc) MainFrame_onRuneS, self);
     Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_P, (EventHandlerFunc) MainFrame_onRuneP, self);
     Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_SEMICOLON, (EventHandlerFunc) MainFrame_onRuneM, self);
-    Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_A, (EventHandlerFunc) MainFrame_onRuneQ, self);
+    Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_SPACE, (EventHandlerFunc) MainFrame_onSpace, self);
     Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_RETURN, (EventHandlerFunc) MainFrame_onEnter, self);
     Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_Q, (EventHandlerFunc) MainFrame_onRuneA, self);
     Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_I, (EventHandlerFunc) MainFrame_onRuneI, self);
@@ -399,7 +399,7 @@ void MainFrame_unfocus(MainFrame* self) {
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_S, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_P, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_SEMICOLON, self);
-    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_A, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_SPACE, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_RETURN, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_Q, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_I, self);
@@ -670,15 +670,12 @@ static int MainFrame_sortGraphThread(void* ptr) {
 
     self->graph_sorting[graph_index] = false;
     self->graph[graph_index]->sort_in_progress = false;
-    SDL_LockMutex(self->ui_mutex);
-    MainFrame_showTempTextf(self, "Graph %d sorted!", graph_index + 1);
-    SDL_UnlockMutex(self->ui_mutex);
 
     safe_free((void **) &arg);
     return 0;
 }
 
-static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self) {
+static void MainFrame_onSpace(Input* input, SDL_Event* evt, MainFrame* self) {
     if (!self || self->showSettings || self->graph_info || MainFrame_isGraphSorting(self) || self->seed_container) return;
     UNUSED(input);
     UNUSED(evt);
@@ -688,8 +685,10 @@ static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self) {
     for (int i = 0; i < graph_to_sort; i++) {
         int idx = self->all_selected ? i : self->selected_graph_index;
         if (List_isSorted(self->graph[idx]->bars, ColumnGraphBar_compare)) {
-            MainFrame_showTempTextf(self, "Graph %d is already sorted!", idx + 1);
-            continue;
+            if (self->popup) {
+                ColumnGraph_removeHovering(self->graph[idx]);
+            }
+            ColumnGraph_shuffleBars(self->graph[idx]);
         }
         SortThreadArg* arg = calloc(1, sizeof(SortThreadArg));
         if (!arg) {
@@ -718,10 +717,10 @@ static void MainFrame_DelaySort(MainFrame* self, ColumnGraph* graph, ColumnGraph
     }
     UNUSED(self);
     if (actual) {
-        actual->element->data.box->background = COLOR_WHITE;
+        actual->element->data.box->background = ColumnGraph_getHoverColor(graph->graph_style);
     }
     if (second) {
-        second->element->data.box->background = COLOR_WHITE;
+        second->element->data.box->background = ColumnGraph_getHoverColor(graph->graph_style);
     }
     ColumnGraph_resetContainer(graph);
     //TODO adjust delay based on number of bars
@@ -1054,7 +1053,7 @@ static void MainFrame_showGraphInfo(MainFrame* self, int index, ColumnGraph* gra
 
     y += 30;
     Text* seed_text = NULL;
-    if (self->seed != 0) {
+    if (self->seed >= 0) {
          seed_text = Text_newf(renderer, TextStyle_deepCopy(base_text_style),
                                     Position_new(graph_info_pos->x + 10, y),
                                     false,

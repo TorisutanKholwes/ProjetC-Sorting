@@ -231,6 +231,40 @@ void List_shuffle(List* list, PRNG* pr) {
     }
 }
 
+void* List_max(List* list, CompareFunc compare_func) {
+    if (!list || list->size == 0) {
+        error("List is empty in List_max");
+        return NULL;
+    }
+    ListNode* node = list->head->next;
+    void* max_value = node->value;
+    node = node->next;
+    while (node != list->head) {
+        if (compare_func(max_value, node->value) < 0) {
+            max_value = node->value;
+        }
+        node = node->next;
+    }
+    return max_value;
+}
+
+void* List_min(List* list, CompareFunc compare_func) {
+    if (!list || list->size == 0) {
+        error("List is empty in List_min");
+        return NULL;
+    }
+    ListNode* node = list->head->next;
+    void* min_value = node->value;
+    node = node->next;
+    while (node != list->head) {
+        if (compare_func(min_value, node->value) > 0) {
+            min_value = node->value;
+        }
+        node = node->next;
+    }
+    return min_value;
+}
+
 ListIterator *ListIterator_new(List *list) {
     ListIterator *iterator = calloc(1, sizeof(ListIterator));
     if (!iterator) {

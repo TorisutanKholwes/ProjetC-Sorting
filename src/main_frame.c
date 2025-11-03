@@ -59,6 +59,7 @@ static void MainFrame_showCustomSizeTempText(MainFrame* self, int font_size, con
 static void MainFrame_showCustomSizeTempTextf(MainFrame* self, int font_size, const char* format, ...);
 static void MainFrame_onRuneT(Input* input, SDL_Event* evt, MainFrame* self);
 static void MainFrame_onCheckboxClicked(Input* input, SDL_Event* evt, Checkbox* checkbox);
+static void MainFrame_onShiftS(Input* input, SDL_Event* evt, MainFrame* self);
 
 MainFrame* MainFrame_new(App* app) {
     MainFrame* self = calloc(1, sizeof(MainFrame));
@@ -87,6 +88,7 @@ MainFrame* MainFrame_new(App* app) {
     }
     self->bar_count = 50;
     self->timer = Timer_new();
+    self->seed = -1;
     self->temp_element = NULL;
     self->selected_graph_index = 0;
     self->ui_mutex = SDL_CreateMutex();
@@ -98,7 +100,7 @@ MainFrame* MainFrame_new(App* app) {
         self->graph_mutexes[i] = SDL_CreateMutex();
         self->graph[i] = ColumnGraph_new(w, h, Position_new(0, 0), app, self, GRAPH_TYPE_INT,
                                          (ColumnsHoverFunc) MainFrame_createPopup,
-                                         (ColumnsHoverFunc) MainFrame_removePopup, i);
+                                         (ColumnsHoverFunc) MainFrame_removePopup, i, self->seed);
         ColumnGraph_initBarsIncrement(self->graph[i], self->bar_count, self->graph_style);
     }
     self->graph_sorting = calloc(self->graph_count, sizeof(bool));
@@ -273,6 +275,9 @@ static void MainFrame_addElements(MainFrame* self, App* app) {
     if (self->temp_element) {
         List_push(self->elements, self->temp_element);
     }
+    if (self->seed_container) {
+        List_push(self->elements, Element_fromContainer(self->seed_container, "seed_container"));
+    }
 }
 
 void MainFrame_destroy(MainFrame* self) {
@@ -418,7 +423,7 @@ Frame* MainFrame_getFrame(MainFrame* self) {
 }
 
 static void MainFrame_onEscape(Input* input, SDL_Event* evt, MainFrame* self) {
-    if (!self || self->graph_info || MainFrame_isGraphSorting(self)) return;
+    if (!self || self->graph_info || MainFrame_isGraphSorting(self) || self->seed_container) return;
     UNUSED(input);
     UNUSED(evt);
     int w, h;
@@ -440,9 +445,14 @@ static void MainFrame_onEscape(Input* input, SDL_Event* evt, MainFrame* self) {
 }
 
 static void MainFrame_onRuneS(Input* input, SDL_Event* evt, MainFrame* self) {
-    UNUSED(input);
-    UNUSED(evt);
     if (!self || self->showSettings || self->graph_info || MainFrame_isGraphSorting(self)) return;
+    if (input->shift) {
+        MainFrame_onShiftS(input, evt, self);
+        return;
+    }
+    if (self->seed_container) {
+        return;
+    }
     if (self->all_selected) {
         for (int i = 0; i < self->graph_count; i++) {
             if (self->popup) {
@@ -460,7 +470,7 @@ static void MainFrame_onRuneS(Input* input, SDL_Event* evt, MainFrame* self) {
 }
 
 static bool MainFrame_createPopup(MainFrame* self, void* value, ColumnGraphType type) {
-    if (!self || self->showSettings || self->graph_info || MainFrame_isGraphSorting(self)) return false;
+    if (!self || self->showSettings || self->graph_info || MainFrame_isGraphSorting(self) || self->seed_container) return false;
     if (self->popup) return true;
     int w, h;
     SDL_GetWindowSize(self->app->window, &w, &h);
@@ -537,6 +547,11 @@ static void MainFrame_updateGraphs(MainFrame* self, int old_count, int old_bar_c
             old_graphs_colors[i] = ColumnGraph_getColors(self->graph[i], &old_graphs_lengths[i]);
             old_graphs_sort_types[i] = self->graph[i]->sort_type;
         }
+    } else if (old_count > 0) {
+        for (int i = 0; i < old_count; i++) {
+            old_graphs_types[i] = self->graph[i]->type;
+            old_graphs_sort_types[i] = self->graph[i]->sort_type;
+        }
     }
     for (int i = 0; i < old_count; i++) {
         ColumnGraph_destroy(self->graph[i]);
@@ -557,12 +572,16 @@ static void MainFrame_updateGraphs(MainFrame* self, int old_count, int old_bar_c
         Color** colors = NULL;
         if (i < old_count) {
             type = old_graphs_types[i];
-            values = old_graphs_values[i];
-            colors = old_graphs_colors[i];
+            if (old_graphs_values[i]) {
+                values = old_graphs_values[i];
+            }
+            if (old_graphs_colors[i]) {
+                colors = old_graphs_colors[i];
+            }
         }
         self->graph[i] = ColumnGraph_new(width, height, Position_new(x, y), self->app, self, type,
                                          (ColumnsHoverFunc) MainFrame_createPopup,
-                                         (ColumnsHoverFunc) MainFrame_removePopup, i);
+                                         (ColumnsHoverFunc) MainFrame_removePopup, i, self->seed);
         if (values) {
             ColumnGraph_initBarsColored(self->graph[i], self->bar_count, values, colors);
             ColumnGraph_setSortType(self->graph[i], old_graphs_sort_types[i]);
@@ -572,6 +591,7 @@ static void MainFrame_updateGraphs(MainFrame* self, int old_count, int old_bar_c
             }
             safe_free((void **) &colors);
         } else {
+            ColumnGraph_setSortType(self->graph[i], old_graphs_sort_types[i]); // We can set this because default value is 0 => LIST_SORT_TYPE_BUBBLE
             ColumnGraph_initBarsIncrement(self->graph[i], self->bar_count, self->graph_style);
         }
     }
@@ -579,7 +599,7 @@ static void MainFrame_updateGraphs(MainFrame* self, int old_count, int old_bar_c
 }
 
 static void MainFrame_onRuneP(Input* input, SDL_Event* evt, MainFrame* self) {
-    if (!self || self->showSettings || self->graph_info || MainFrame_isGraphSorting(self)) return;
+    if (!self || self->showSettings || self->graph_info || MainFrame_isGraphSorting(self) || self->seed_container) return;
     UNUSED(input);
     UNUSED(evt);
     if (self->graph_count == MAX_GRAPHS) return;
@@ -593,7 +613,7 @@ static void MainFrame_onRuneP(Input* input, SDL_Event* evt, MainFrame* self) {
 }
 
 static void MainFrame_onRuneM(Input* input, SDL_Event* evt, MainFrame* self) {
-    if (!self || self->showSettings || self->graph_info || MainFrame_isGraphSorting(self)) return;
+    if (!self || self->showSettings || self->graph_info || MainFrame_isGraphSorting(self) || self->seed_container) return;
     UNUSED(input);
     UNUSED(evt);
     if (self->popup) {
@@ -642,13 +662,16 @@ static int MainFrame_sortGraphThread(void* ptr) {
 
     self->graph_sorting[graph_index] = false;
     self->graph[graph_index]->sort_in_progress = false;
+    SDL_LockMutex(self->ui_mutex);
+    MainFrame_showTempTextf(self, "Graph %d sorted!", graph_index + 1);
+    SDL_UnlockMutex(self->ui_mutex);
 
     safe_free((void **) &arg);
     return 0;
 }
 
 static void MainFrame_onRuneQ(Input* input, SDL_Event* evt, MainFrame* self) {
-    if (!self || self->showSettings || self->graph_info || MainFrame_isGraphSorting(self)) return;
+    if (!self || self->showSettings || self->graph_info || MainFrame_isGraphSorting(self) || self->seed_container) return;
     UNUSED(input);
     UNUSED(evt);
     int graph_to_sort = self->all_selected ? self->graph_count : 1;
@@ -842,7 +865,7 @@ static void MainFrame_loadFile(Input* input, SDL_Event* evt, Button* button) {
 static void MainFrame_onClick(Input* input, SDL_Event* evt, MainFrame* self) {
     UNUSED(input);
     UNUSED(evt);
-    if (!self || self->graph_info || MainFrame_isGraphSorting(self)) return;
+    if (!self || self->graph_info || MainFrame_isGraphSorting(self) || self->seed_container) return;
     float x, y;
     Input_getMousePosition(self->app->input, &x, &y);
 
@@ -885,7 +908,7 @@ static void MainFrame_onClick(Input* input, SDL_Event* evt, MainFrame* self) {
 static void MainFrame_onRuneA(Input* input, SDL_Event* evt, MainFrame* self) {
     UNUSED(input);
     UNUSED(evt);
-    if (!self || self->showSettings || self->graph_info || MainFrame_isGraphSorting(self)) return;
+    if (!self || self->showSettings || self->graph_info || MainFrame_isGraphSorting(self) || self->seed_container) return;
     self->all_selected = !self->all_selected;
     MainFrame_addElements(self, self->app);
 }
@@ -914,7 +937,7 @@ static void MainFrame_onGraphThemeChange(Input* input, SDL_Event* evt, Select* s
 static void MainFrame_onMouseMove(Input* input, SDL_Event* evt, MainFrame* self) {
     UNUSED(input);
     UNUSED(evt);
-    if (!self || !self->showSettings || self->graph_info || MainFrame_isGraphSorting(self)) return;
+    if (!self || !self->showSettings || self->graph_info || MainFrame_isGraphSorting(self) || self->seed_container) return;
     Container* container = Element_getById(self->elements, "settings")->data.container;
     Image* img = Element_getById(container->children, "help_image")->data.image;
     Size imgSize = Image_getSize(img);
@@ -1039,7 +1062,7 @@ static void MainFrame_hideGraphInfo(MainFrame* self) {
 }
 
 static void MainFrame_onRuneO(Input* input, SDL_Event* evt, MainFrame* self) {
-    if (!self || self->showSettings || self->graph_info || MainFrame_isGraphSorting(self)) return;
+    if (!self || self->showSettings || self->graph_info || MainFrame_isGraphSorting(self) || self->seed_container) return;
     UNUSED(input);
     UNUSED(evt);
     int graph_count = self->all_selected ? self->graph_count : 1;
@@ -1143,5 +1166,88 @@ static void MainFrame_onCheckboxClicked(Input* input, SDL_Event* evt, Checkbox* 
     if (!parent || !parent->parent) return;
     MainFrame* self = parent->parent;
     self->automatic_delay = Checkbox_isChecked(checkbox);
+    MainFrame_addElements(self, self->app);
+}
+
+static void MainFrame_onChangeSeed(Input* input, SDL_Event* evt, Button* button) {
+    if (!button) return;
+    UNUSED(input);
+    UNUSED(evt);
+    Container* parent = button->parent;
+    if (!parent || !parent->parent) return;
+    InputBox* inputBox = Element_getById(parent->children, "seed_input")->data.input_box;
+    if (!inputBox) return;
+    MainFrame* self = parent->parent;
+    const char* seed_str = InputBox_getString(inputBox);
+    if (String_isNumeric(seed_str)) {
+        long seed = atol(seed_str);
+        self->seed = seed;
+        MainFrame_showTempTextf(self, "Seed set to %ld", seed);
+        Container_destroy(self->seed_container);
+        self->seed_container = NULL;
+        MainFrame_addElements(self, self->app);
+        MainFrame_updateGraphs(self, self->graph_count, self->bar_count);
+    } else {
+        MainFrame_showTempText(self, "Invalid seed value");
+    }
+}
+
+static void MainFrame_onResetSeed(Input* input, SDL_Event* evt, Button* button) {
+    if (!button) return;
+    UNUSED(input);
+    UNUSED(evt);
+    Container* parent = button->parent;
+    if (!parent || !parent->parent) return;
+    MainFrame* self = parent->parent;
+    srand((unsigned int) time(NULL));
+    MainFrame_showTempText(self, "Seed reset to current time");
+    Container_destroy(self->seed_container);
+    self->seed_container = NULL;
+    MainFrame_addElements(self, self->app);
+}
+
+static void MainFrame_onShiftS(Input* input, SDL_Event* evt, MainFrame* self) {
+    UNUSED(input);
+    UNUSED(evt);
+    if (self->seed_container) {
+        Container_destroy(self->seed_container);
+        self->seed_container = NULL;
+        MainFrame_addElements(self, self->app);
+        return;
+    }
+    int w, h;
+    SDL_GetWindowSize(self->app->window, &w, &h);
+    float container_width = 300;
+    float container_height = 200;
+    self->seed_container = Container_new(w / 2, h / 2, container_width, container_height, true,
+                                         Color_copy(self->app->theme->background), self);
+    Box_setBorder(self->seed_container->box, 4, Color_copy(COLOR_WHITE));
+
+    Text* title = Text_newf(self->app->renderer,
+                             TextStyle_new(ResourceManager_getDefaultBoldFont(self->app->manager, 24),
+                                           24, COLOR_WHITE, TTF_STYLE_NORMAL),
+                             POSITION_NULL, false, "Set specific seed :");
+    Size title_size = Text_getSize(title);
+    Position* seed_pos = Container_getPosition(self->seed_container);
+    Text_setPosition(title, seed_pos->x + (container_width - title_size.width) / 2, seed_pos->y + 10);
+
+    InputBox* seed_input = InputBox_new(self->app,
+        SDL_CreateRect(seed_pos->x + 10, seed_pos->y + 60, container_width - 20, 40, false),
+        InputBoxStyle_default(self->app->manager),
+        self->seed_container);
+
+    Button* saveButton = Button_new(self->app, Position_new(seed_pos->x + 30, seed_pos->y + 120), false, ButtonStyle_default(self->app->manager),
+                                    self->seed_container, "Save");
+    Button_onClick(saveButton, (EventHandlerFunc) MainFrame_onChangeSeed);
+
+    Button* resetButton = Button_new(self->app, Position_new(seed_pos->x + 160, seed_pos->y + 120), false, ButtonStyle_default(self->app->manager),
+                                    self->seed_container, "Reset");
+    Button_onClick(resetButton, (EventHandlerFunc) MainFrame_onResetSeed);
+
+
+    Container_addChild(self->seed_container, Element_fromText(title, NULL));
+    Container_addChild(self->seed_container, Element_fromInput(seed_input, "seed_input"));
+    Container_addChild(self->seed_container, Element_fromButton(saveButton, NULL));
+    Container_addChild(self->seed_container, Element_fromButton(resetButton, NULL));
     MainFrame_addElements(self, self->app);
 }

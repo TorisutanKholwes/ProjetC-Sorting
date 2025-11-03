@@ -15,6 +15,9 @@ struct MainFrame {
     ColumnGraphStyle graph_style;
     Container* popup;
     Container* graph_info;
+    Container* seed_container;
+
+    int seed;
 
     Element* temp_element;
     Timer* timer;

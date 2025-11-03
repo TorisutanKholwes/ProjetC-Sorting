@@ -122,6 +122,8 @@ typedef struct MainFrame MainFrame;
 /** @brief The help frame */
 typedef struct HelpFrame HelpFrame;
 
+typedef struct PRNG PRNG;
+
 // Structure who's not used as a pointer elsewhere
 /** @brief 2D size structure */
 typedef struct {

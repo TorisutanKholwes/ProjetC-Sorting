@@ -13,6 +13,7 @@
 #include "layout.h"
 #include "list.h"
 #include "logger.h"
+#include "random.h"
 #include "resource_manager.h"
 #include "sort.h"
 #include "stats.h"
@@ -24,7 +25,7 @@
 static void ColumnGraph_handleMouseMotion(Input* input, SDL_Event* evt, ColumnGraph* graph);
 static void ColumnGraph_initGraphStatsContainer(ColumnGraph* graph);
 
-ColumnGraph* ColumnGraph_new(float width, float height, Position* position, App* app, void* parent, ColumnGraphType type, ColumnsHoverFunc onHover, ColumnsHoverFunc offHover, int index) {
+ColumnGraph* ColumnGraph_new(float width, float height, Position* position, App* app, void* parent, ColumnGraphType type, ColumnsHoverFunc onHover, ColumnsHoverFunc offHover, int index, int seed) {
     ColumnGraph* graph = calloc(1, sizeof(ColumnGraph));
     if (!graph) {
         error("Failed to allocate memory for ColumnGraph");
@@ -42,9 +43,10 @@ ColumnGraph* ColumnGraph_new(float width, float height, Position* position, App*
     graph->sort_timer = Timer_new();
     graph->sort_type = LIST_SORT_TYPE_BUBBLE;
     graph->bars = List_create();
-    graph->container = FlexContainer_new(position->x, position->y, width, height);
     graph->onHover = onHover;
     graph->offHover = offHover;
+    graph->prng = seed >= 0 ? PRNG_init(seed) : NULL;
+    graph->container = FlexContainer_new(position->x, position->y, width, height);
     FlexContainer_setAlignItems(graph->container, NO_FLEX_ALIGN);
 
     Input_addEventHandler(app->input, SDL_MOUSEMOTION, (EventHandlerFunc) ColumnGraph_handleMouseMotion, graph);
@@ -231,7 +233,7 @@ void ColumnGraph_setGraphType(ColumnGraph* graph, ColumnGraphType type) {
 
 void ColumnGraph_shuffleBars(ColumnGraph* graph) {
     if (!graph) return;
-    List_shuffle(graph->bars);
+    List_shuffle(graph->bars, graph->prng);
     FlexContainer_clear(graph->container);
     ListIterator* it = ListIterator_new(graph->bars);
     while (ListIterator_hasNext(it)) {

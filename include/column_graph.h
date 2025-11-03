@@ -15,6 +15,8 @@ struct ColumnGraph {
     void* parent;
     int graph_index;
 
+    PRNG* prng;
+
     App* app;
     bool hovered;
 
@@ -36,7 +38,7 @@ struct ColumnGraph {
     ColumnsHoverFunc offHover;
 };
 
-ColumnGraph* ColumnGraph_new(float width, float height, Position* position, App* app, void* parent, ColumnGraphType type, ColumnsHoverFunc onHover, ColumnsHoverFunc offHover, int index);
+ColumnGraph* ColumnGraph_new(float width, float height, Position* position, App* app, void* parent, ColumnGraphType type, ColumnsHoverFunc onHover, ColumnsHoverFunc offHover, int index, int seed);
 void ColumnGraph_destroy(ColumnGraph* graph);
 void ColumnGraph_update(ColumnGraph* graph);
 void ColumnGraph_initBars(ColumnGraph* graph, int bars_count, void** values, ColumnGraphStyle style);

@@ -7,6 +7,7 @@
 #include "utils.h"
 #include "string_builder.h"
 #include "column_graph.h"
+#include "random.h"
 #include "sort.h"
 
 List *List_create() {
@@ -220,12 +221,12 @@ void List_swap(List* list, size_t index1, size_t index2) {
     node2->value = temp;
 }
 
-void List_shuffle(List* list) {
+void List_shuffle(List* list, PRNG* pr) {
     if (!list || list->size < 2) return;
 
     size_t n = list->size;
     for (size_t i = n - 1; i > 0; i--) {
-        size_t j = rand() % (i + 1);
+        size_t j = (pr == NULL ? rand() : PRNG_next(pr)) % (i + 1);
         List_swap(list, i, j);
     }
 }

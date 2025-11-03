@@ -345,7 +345,7 @@ void List_sortBogo(List* list, CompareFunc compare_func, SDL_mutex* gm, DelayFun
 
     while (!sorted) {
         SDL_LockMutex(gm);
-        List_shuffle(list);
+        List_shuffle(list, NULL);
         if (column_graph && column_graph->stats) {
             GraphStats_incrementAccessMemory(column_graph->stats, (int)list->size);
         }

@@ -8,7 +8,7 @@
 #include "utils.h"
 
 Mix_Chunk* Audio_createNoise(int frequency, int duration_ms) {
-    constexpr int sample_rate = 44100;
+    const int sample_rate = 44100;
     int samples = (duration_ms * sample_rate) / 1000;
 
     int16_t* buffer = malloc(samples * sizeof(int16_t));
@@ -18,7 +18,7 @@ Mix_Chunk* Audio_createNoise(int frequency, int duration_ms) {
     }
 
     for (int i = 0; i < samples; i++) {
-        constexpr int16_t amplitude = 28000;
+        const int16_t amplitude = 28000;
         double time = (double)i / sample_rate;
         buffer[i] = (int16_t)(amplitude * sin(2.0 * M_PI * frequency * time));
     }

@@ -10,6 +10,7 @@
 #include "input.h"
 #include "list.h"
 #include "main_frame.h"
+#include "random.h"
 #include "resource_manager.h"
 #include "style.h"
 
@@ -125,28 +126,5 @@ int main() {
 
 #if 0
 int main() {
-    FILE* file = tempFile("../assets/images/checkmark.svg");
-    if (!file) {
-        return EXIT_FAILURE;
-    }
-    remplaceDataInFile(file, "000000", "FF0000");
-
-    // For testing: write the temp file to disk to verify the changes
-    FILE* outFile = fopen("modified_checkmark.svg", "wb");
-    if (!outFile) {
-        error("Failed to open output file for writing modified SVG");
-        fclose(file);
-        return EXIT_FAILURE;
-    }
-    char buffer[8192];
-    size_t bytes;
-    rewind(file);
-    while ((bytes = fread(buffer, 1, sizeof(buffer), file)) > 0) {
-        fwrite(buffer, 1, bytes, outFile);
-    }
-    fclose(outFile);
-    fclose(file);
-
-    return EXIT_SUCCESS;
 }
 #endif

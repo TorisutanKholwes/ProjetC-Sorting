@@ -593,7 +593,9 @@ static void MainFrame_updateGraphs(MainFrame* self, int old_count, int old_bar_c
             self->graph[i]->stats = stats;
             safe_free((void **) &values);
             for (int j = 0; j < old_graphs_lengths[i]; j++) {
-                Color_destroy(colors[j]);
+                if (colors && colors[j]) {
+                    Color_destroy(colors[j]);
+                }
             }
             safe_free((void **) &colors);
         } else {
@@ -1050,11 +1052,23 @@ static void MainFrame_showGraphInfo(MainFrame* self, int index, ColumnGraph* gra
                                      false,
                                      "Sort Type: %s", ListSortType_toString(graph->sort_type));
 
+    y += 30;
+    Text* seed_text = NULL;
+    if (self->seed != 0) {
+         seed_text = Text_newf(renderer, TextStyle_deepCopy(base_text_style),
+                                    Position_new(graph_info_pos->x + 10, y),
+                                    false,
+                                    "Seed: %d", self->seed);
+    }
+
     Container_addChild(self->graph_info, Element_fromText(graph_title, NULL));
     Container_addChild(self->graph_info, Element_fromText(type_graph_text, NULL));
     Container_addChild(self->graph_info, Element_fromText(bar_count_text, NULL));
     Container_addChild(self->graph_info, Element_fromText(is_sorted_text, NULL));
     Container_addChild(self->graph_info, Element_fromText(sort_type_text, NULL));
+    if (seed_text) {
+        Container_addChild(self->graph_info, Element_fromText(seed_text, NULL));
+    }
 
     Position_destroy(graph_info_pos);
     MainFrame_addElements(self, self->app);
@@ -1110,7 +1124,7 @@ static void MainFrame_showTempText(MainFrame* self, const char* text) {
 }
 
 static void MainFrame_showTempTextf(MainFrame* self, const char* format, ...) {
-    if (!self || !format) return;
+    if (!self) return;
     va_list args;
     va_start(args, format);
     char buffer[512];
@@ -1120,7 +1134,6 @@ static void MainFrame_showTempTextf(MainFrame* self, const char* format, ...) {
 }
 
 static void MainFrame_showCustomSizeTempText(MainFrame* self, int font_size, const char* text) {
-    if (!self || !text) return;
     Element* copy_temp_element = NULL;;
     if (self->temp_element) {
         copy_temp_element = self->temp_element;
@@ -1149,7 +1162,6 @@ static void MainFrame_showCustomSizeTempText(MainFrame* self, int font_size, con
 }
 
 static void MainFrame_showCustomSizeTempTextf(MainFrame* self, int font_size, const char* format, ...) {
-    if (!self || !format) return;
     va_list args;
     va_start(args, format);
     char buffer[512];

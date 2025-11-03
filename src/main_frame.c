@@ -538,19 +538,22 @@ static void MainFrame_updateGraphs(MainFrame* self, int old_count, int old_bar_c
     ColumnGraphType* old_graphs_types = calloc(old_count, sizeof(ColumnGraphType));
     ListSortType* old_graphs_sort_types = calloc(old_count, sizeof(ListSortType));
     int* old_graphs_lengths = calloc(old_count, sizeof(int));
-    Color*** old_graphs_colors = calloc(old_count, sizeof(Color *));
+    Color*** old_graphs_colors = calloc(old_count, sizeof(Color **));
     void*** old_graphs_values = calloc(old_count, sizeof(void **));
+    GraphStats** old_graphs_stats = calloc(old_count, sizeof(GraphStats *));
     if (old_count > 0 && old_bar_count >= self->bar_count) {
         for (int i = 0; i < old_count; i++) {
             old_graphs_types[i] = self->graph[i]->type;
             old_graphs_values[i] = ColumnGraph_getValues(self->graph[i], &old_graphs_lengths[i]);
             old_graphs_colors[i] = ColumnGraph_getColors(self->graph[i], &old_graphs_lengths[i]);
             old_graphs_sort_types[i] = self->graph[i]->sort_type;
+            old_graphs_stats[i] = self->graph[i]->stats;
         }
     } else if (old_count > 0) {
         for (int i = 0; i < old_count; i++) {
             old_graphs_types[i] = self->graph[i]->type;
             old_graphs_sort_types[i] = self->graph[i]->sort_type;
+            old_graphs_stats[i] = self->graph[i]->stats;
         }
     }
     for (int i = 0; i < old_count; i++) {
@@ -568,6 +571,7 @@ static void MainFrame_updateGraphs(MainFrame* self, int old_count, int old_bar_c
         float x = (i % 2) * width;
         float y = (i / 2) * height;
         ColumnGraphType type = GRAPH_TYPE_INT;
+        GraphStats* stats = NULL;
         void** values = NULL;
         Color** colors = NULL;
         if (i < old_count) {
@@ -578,6 +582,7 @@ static void MainFrame_updateGraphs(MainFrame* self, int old_count, int old_bar_c
             if (old_graphs_colors[i]) {
                 colors = old_graphs_colors[i];
             }
+            stats = old_graphs_stats[i];
         }
         self->graph[i] = ColumnGraph_new(width, height, Position_new(x, y), self->app, self, type,
                                          (ColumnsHoverFunc) MainFrame_createPopup,
@@ -585,6 +590,7 @@ static void MainFrame_updateGraphs(MainFrame* self, int old_count, int old_bar_c
         if (values) {
             ColumnGraph_initBarsColored(self->graph[i], self->bar_count, values, colors);
             ColumnGraph_setSortType(self->graph[i], old_graphs_sort_types[i]);
+            self->graph[i]->stats = stats;
             safe_free((void **) &values);
             for (int j = 0; j < old_graphs_lengths[i]; j++) {
                 Color_destroy(colors[j]);

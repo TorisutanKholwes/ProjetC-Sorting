@@ -236,3 +236,11 @@ void Button_onHoverEnd(Button* button, EventHandlerFunc func);
  * @return Size The size of the button
  */
 Size Button_getSize(Button* button);
+
+/**
+ * @brief Get the text label of the button
+ *
+ * @param button The Button instance
+ * @return char* The text label of the button
+ */
+char* Button_getText(Button* button);

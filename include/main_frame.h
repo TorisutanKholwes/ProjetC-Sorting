@@ -16,6 +16,7 @@ struct MainFrame {
     Container* popup;
     Container* graph_info;
     Container* seed_container;
+    Container* sort_type_container;
 
     int seed;
 

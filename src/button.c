@@ -291,3 +291,8 @@ static void Button_styleNormal(Button* button) {
     }
     button->style = ButtonStyle_deepCopy(button->copy_style);
 }
+
+char* Button_getText(Button* button) {
+    if (!button || !button->text) return NULL;
+    return button->text->text;
+}

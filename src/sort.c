@@ -8,6 +8,7 @@
 #include "list.h"
 #include "logger.h"
 #include "stats.h"
+#include "utils.h"
 
 int List_defaultCompare(const void* a, const void* b) {
     return (long)a - (long)b;
@@ -519,4 +520,32 @@ const char* ListSortType_toString(ListSortType sortType) {
         default:
             return "Unknown Sort Type";
     }
+}
+
+ListSortType ListSortType_fromString(const char* str) {
+    if (String_equals(str, "Bubble Sort")) {
+        return LIST_SORT_TYPE_BUBBLE;
+    }
+    if (String_equals(str, "Quick Sort")) {
+        return LIST_SORT_TYPE_QUICK;
+    }
+    if (String_equals(str, "Merge Sort")) {
+        return LIST_SORT_TYPE_MERGE;
+    }
+    if (String_equals(str, "Insertion Sort")) {
+        return LIST_SORT_TYPE_INSERTION;
+    }
+    if (String_equals(str, "Bitonic Sort")) {
+        return LIST_SORT_TYPE_BITONIC;
+    }
+    if (String_equals(str, "Bogo Sort")) {
+        return LIST_SORT_TYPE_BOGO;
+    }
+    if (String_equals(str, "Selection Sort")) {
+        return LIST_SORT_TYPE_SELECTION;
+    }
+    if (String_equals(str, "Radix Sort")) {
+        return LIST_SORT_TYPE_RADIX;
+    }
+    return LIST_SORT_TYPE_COUNT;
 }

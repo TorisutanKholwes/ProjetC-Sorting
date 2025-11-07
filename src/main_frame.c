@@ -21,6 +21,7 @@
 #include "help_frame.h"
 #include "image.h"
 #include "input_box.h"
+#include "random.h"
 #include "resource_manager.h"
 #include "select.h"
 #include "sort.h"
@@ -61,6 +62,7 @@ static void MainFrame_onRuneT(Input* input, SDL_Event* evt, MainFrame* self);
 static void MainFrame_onCheckboxClicked(Input* input, SDL_Event* evt, Checkbox* checkbox);
 static void MainFrame_onShiftS(Input* input, SDL_Event* evt, MainFrame* self);
 static void MainFrame_onTabulation(Input* input, SDL_Event* evt, MainFrame* self);
+static void MainFrame_onShiftSpace(Input* input, SDL_Event* evt, MainFrame* self);
 
 MainFrame* MainFrame_new(App* app) {
     MainFrame* self = calloc(1, sizeof(MainFrame));
@@ -684,8 +686,10 @@ static int MainFrame_sortGraphThread(void* ptr) {
 
 static void MainFrame_onSpace(Input* input, SDL_Event* evt, MainFrame* self) {
     if (!self || self->showSettings || self->graph_info || MainFrame_isGraphSorting(self) || self->seed_container || self->sort_type_container) return;
-    UNUSED(input);
-    UNUSED(evt);
+    if (input->shift) {
+        MainFrame_onShiftSpace(input, evt, self);
+        return;
+    }
     int graph_to_sort = self->all_selected ? self->graph_count : 1;
     SDL_Thread** threads = calloc(graph_to_sort, sizeof(SDL_Thread *));
 
@@ -767,6 +771,9 @@ static void MainFrame_onEnter(Input* input, SDL_Event* evt, MainFrame* self) {
         return;
     }
     if (graphCount > MAX_GRAPHS) {
+        return;
+    }
+    if (barCount > MAX_BARS) {
         return;
     }
     if (self->graph_count == graphCount && self->bar_count == barCount && self->delay_ms == delayMs) {
@@ -924,6 +931,7 @@ static void MainFrame_onRuneA(Input* input, SDL_Event* evt, MainFrame* self) {
     UNUSED(evt);
     if (!self || self->showSettings || self->graph_info || MainFrame_isGraphSorting(self) || self->seed_container || self->sort_type_container) return;
     self->all_selected = !self->all_selected;
+    MainFrame_showTempTextf(self, self->all_selected ? "All Graphs Selected" : "Single Graph Selected (Graph %d)", self->selected_graph_index+1);
     MainFrame_addElements(self, self->app);
 }
 
@@ -951,17 +959,19 @@ static void MainFrame_onGraphThemeChange(Input* input, SDL_Event* evt, Select* s
 static void MainFrame_onMouseMove(Input* input, SDL_Event* evt, MainFrame* self) {
     UNUSED(input);
     UNUSED(evt);
-    if (!self || !self->showSettings || self->graph_info || MainFrame_isGraphSorting(self) || self->seed_container || self->sort_type_container) return;
-    Container* container = Element_getById(self->elements, "settings")->data.container;
-    Image* img = Element_getById(container->children, "help_image")->data.image;
-    Size imgSize = Image_getSize(img);
-    SDL_FRect rect = {img->position->x, img->position->y, imgSize.width, imgSize.height};
-    if (Input_mouseInRect(self->app->input, rect)) {
-        self->hovered_help = true;
-        Image_changePath(img, self->app, "help_hover.svg");
-    } else if (self->hovered_help) {
-        self->hovered_help = false;
-        Image_changePath(img, self->app, "help_white.svg");
+    if (!self || self->graph_info || MainFrame_isGraphSorting(self) || self->seed_container || self->sort_type_container) return;
+    if (self->showSettings) {
+        Container* container = Element_getById(self->elements, "settings")->data.container;
+        Image* img = Element_getById(container->children, "help_image")->data.image;
+        Size imgSize = Image_getSize(img);
+        SDL_FRect rect = {img->position->x, img->position->y, imgSize.width, imgSize.height};
+        if (Input_mouseInRect(self->app->input, rect)) {
+            self->hovered_help = true;
+            Image_changePath(img, self->app, "help_hover.svg");
+        } else if (self->hovered_help) {
+            self->hovered_help = false;
+            Image_changePath(img, self->app, "help_white.svg");
+        }
     }
 }
 
@@ -1345,5 +1355,32 @@ static void MainFrame_onTabulation(Input* input, SDL_Event* evt, MainFrame* self
         Button_onClick(sort_button, (EventHandlerFunc) MainFrame_changeSortType);
         Container_addChild(self->sort_type_container, Element_fromButton(sort_button, NULL));
     }
+    MainFrame_addElements(self, self->app);
+}
+
+static void MainFrame_onShiftSpace(Input* input, SDL_Event* evt, MainFrame* self) {
+    UNUSED(input);
+    UNUSED(evt);
+    ListSortType sortsType[] = {
+        LIST_SORT_TYPE_BUBBLE,
+        LIST_SORT_TYPE_MERGE,
+        LIST_SORT_TYPE_INSERTION,
+        LIST_SORT_TYPE_SELECTION,
+        LIST_SORT_TYPE_QUICK,
+        LIST_SORT_TYPE_RADIX
+    };
+    int oldGraphCount = self->graph_count;
+    self->graph_count = sizeof(sortsType) / sizeof(sortsType[0]);
+    srand((unsigned int) time(NULL));
+    long seed = rand() % 9901 + 100;
+    MainFrame_updateGraphs(self, oldGraphCount, self->bar_count);
+    for (int i = 0; i < self->graph_count; i++) {
+        self->graph[i]->sort_type = sortsType[i];
+        self->graph[i]->prng = PRNG_init(seed);
+        ColumnGraph_shuffleBars(self->graph[i]);
+        PRNG_destroy(self->graph[i]->prng);
+        self->graph[i]->prng = NULL;
+    }
+    self->all_selected = true;
     MainFrame_addElements(self, self->app);
 }

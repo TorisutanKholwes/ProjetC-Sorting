@@ -13,6 +13,7 @@
 #define FULLSCREEN 0
 #define FRAME_RATE 60
 #define MAX_GRAPHS 8
+#define MAX_BARS 10000
 
 #define PRODUCTION 0 // Set to 1 for production build, 0 for development
 

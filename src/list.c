@@ -226,7 +226,7 @@ void List_shuffle(List* list, PRNG* pr) {
 
     size_t n = list->size;
     for (size_t i = n - 1; i > 0; i--) {
-        size_t j = (pr == NULL ? rand() : PRNG_next(pr)) % (i + 1);
+        size_t j = (pr == NULL ? (Uint32) rand() : PRNG_next(pr)) % (i + 1);
         List_swap(list, i, j);
     }
 }

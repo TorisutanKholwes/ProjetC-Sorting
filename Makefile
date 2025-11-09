@@ -9,7 +9,7 @@ INSTALL_DIR := libs
 
 TINY_URL ?= https://raw.githubusercontent.com/native-toolkit/tinyfiledialogs/master
 
-APP_NAME := SDLBase
+APP_NAME := ProjectC-Sorting
 
 CMAKE := cmake
 CMAKE_BUILD_TYPE := Release

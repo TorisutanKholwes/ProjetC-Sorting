@@ -110,10 +110,13 @@ typedef struct Container Container;
 /** @brief A selectable UI element */
 typedef struct Select Select;
 
+/** @brief Arguments for sorting thread */
 typedef struct SortThreadArg SortThreadArg;
 
+/** @brief A checkbox UI element */
 typedef struct Checkbox Checkbox;
 
+/** @brief Arguments for sorting algorithms */
 typedef struct SortArgs SortArgs;
 
 // Frames
@@ -122,6 +125,7 @@ typedef struct MainFrame MainFrame;
 /** @brief The help frame */
 typedef struct HelpFrame HelpFrame;
 
+/** @brief The sorting frame */
 typedef struct PRNG PRNG;
 
 // Structure who's not used as a pointer elsewhere
@@ -180,4 +184,5 @@ typedef bool (*ColumnsHoverFunc)(void* data, void* value, ColumnGraphType type);
 /** @brief Function pointer for comparing two elements */
 typedef int (*CompareFunc)(const void* a, const void* b);
 
+/** @brief Function pointer for delaying between sorting steps */
 typedef void (*DelayFunc)(MainFrame* self, ColumnGraph* graph, ColumnGraphBar* actual, ColumnGraphBar* second);

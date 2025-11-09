@@ -126,5 +126,20 @@ void Container_unFocus(Container* container);
  */
 void Container_setSize(Container* container, float width, float height);
 
+/**
+ * @brief Get the position of the container
+ *
+ * @param container - The Container instance
+ *
+ * @return Position pointer of the container
+ */
 Position* Container_getPosition(Container* container);
+
+/**
+ * @brief Get the size of the container
+ *
+ * @param container - The Container instance
+ *
+ * @return Size struct representing width and height of the container
+ */
 Size Container_getSize(Container* container);

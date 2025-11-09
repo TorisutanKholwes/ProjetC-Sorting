@@ -7,6 +7,8 @@ UNAME_S := $(shell uname -s 2>/dev/null || echo Windows)
 BUILD_DIR := build
 INSTALL_DIR := libs
 
+TINY_URL ?= https://raw.githubusercontent.com/native-toolkit/tinyfiledialogs/master
+
 APP_NAME := SDLBase
 
 CMAKE := cmake
@@ -106,3 +108,25 @@ clean-all: clean
 	@echo "$(COLOR_YELLOW)Cleaning all artifacts including SDL installation...$(COLOR_RESET)"
 	@rm -rf $(INSTALL_DIR)
 	@echo "$(COLOR_GREEN)All clean completed!$(COLOR_RESET)"
+
+deps:
+	@echo "$(COLOR_BOLD)Installing tinyfiledialogs...$(COLOR_RESET)"
+	@mkdir -p $(INSTALL_DIR)/tinyfiledialogs
+	@if command -v curl >/dev/null 2>&1; then \
+		echo "Downloading from $(TINY_URL) ..."; \
+		curl -L $(TINY_URL)/tinyfiledialogs.c -o $(INSTALL_DIR)/tinyfiledialogs/tinyfiledialogs.c; \
+		curl -L $(TINY_URL)/tinyfiledialogs.h -o $(INSTALL_DIR)/tinyfiledialogs/tinyfiledialogs.h; \
+	elif command -v wget >/dev/null 2>&1; then \
+		echo "Downloading from $(TINY_URL) ..."; \
+	 	wget $(TINY_URL)/tinyfiledialogs -O $(INSTALL_DIR)/tinyfiledialogs/tinyfiledialogs.c; \
+	 	wget $(TINY_URL)/tinyfiledialogs.h -O $(INSTALL_DIR)/tinyfiledialogs/tinyfiledialogs.h; \
+	else \
+		echo "$(COLOR_YELLOW)Error: curl or wget is required to download tinyfiledialogs.$(COLOR_RESET)"; \
+		exit 1; \
+	fi
+
+gcc:
+	@echo "$(COLOR_BOLD)Building with GCC...$(COLOR_RESET)"
+	@mkdir -p $(BUILD_DIR)
+	@gcc -Wall -Wextra -Werror -O2 src/*.c libs/tinyfiledialogs/tinyfiledialogs.c -o $(BUILD_DIR)/$(APP_NAME) -Iinclude -Ilibs/tinyfiledialogs -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer
+	@echo "$(COLOR_GREEN)GCC build completed successfully!$(COLOR_RESET)"

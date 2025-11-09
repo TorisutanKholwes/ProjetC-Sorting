@@ -803,7 +803,12 @@ static void MainFrame_loadFileCallback(MainFrame* self, const char* filename) {
         return;
     }
     int values_len;
-    fscanf(file, "%d", &values_len);
+    int scanReturn = fscanf(file, "%d", &values_len);
+    if (scanReturn != 1 || values_len <= 0) {
+        log_message(LOG_LEVEL_WARN, "Failed to read values length from file");
+        fclose(file);
+        return;
+    }
     void** values = calloc(values_len, sizeof(void *));
     if (!values) {
         error("Failed to allocate memory for values");
@@ -811,7 +816,13 @@ static void MainFrame_loadFileCallback(MainFrame* self, const char* filename) {
         return;
     }
     char typeString[64];
-    fscanf(file, "%s", typeString);
+    scanReturn = fscanf(file, "%s", typeString);
+    if (scanReturn != 1) {
+        log_message(LOG_LEVEL_WARN, "Failed to read values type from file");
+        safe_free((void **) &values);
+        fclose(file);
+        return;
+    }
     ColumnGraphType type = String_equals(typeString, "int")
                                ? GRAPH_TYPE_INT
                                : String_equals(typeString, "string")
@@ -822,15 +833,33 @@ static void MainFrame_loadFileCallback(MainFrame* self, const char* filename) {
         case GRAPH_TYPE_INT:
             format = "%ld";
             for (int i = 0; i < values_len; i++) {
-                fscanf(file, format, &values[i]);
+                scanReturn = fscanf(file, format, &values[i]);
+                if (scanReturn != 1) {
+                    log_message(LOG_LEVEL_WARN, "Failed to read integer value from file");
+                    for (int j = 0; j < i; j++) {
+                        safe_free((void **) &values[j]);
+                    }
+                    safe_free((void **) &values);
+                    fclose(file);
+                    return;
+                }
             }
             break;
         case GRAPH_TYPE_STRING:
             format = "%s";
             for (int i = 0; i < values_len; i++) {
                 char buffer[256];
-                fscanf(file, format, buffer);
+                scanReturn = fscanf(file, format, buffer);
                 values[i] = Strdup(buffer);
+                if (scanReturn != 1) {
+                    log_message(LOG_LEVEL_WARN, "Failed to read string value from file");
+                    for (int j = 0; j < i; j++) {
+                        safe_free((void **) &values[j]);
+                    }
+                    safe_free((void **) &values);
+                    fclose(file);
+                    return;
+                }
             }
             break;
     }

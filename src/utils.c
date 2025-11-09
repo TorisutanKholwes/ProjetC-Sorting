@@ -63,7 +63,7 @@ int init() {
         return EXIT_FAILURE;
     }
 
-    if (Mix_Init(MIX_INIT_WAVPACK) < 0) {
+    if (Mix_Init(MIX_INIT_FLAC) < 0) {
         error("Unable to initialize SDL_mixer: %s", SDL_GetError());
         return EXIT_FAILURE;
     }

@@ -118,7 +118,7 @@ deps:
 		curl -L $(TINY_URL)/tinyfiledialogs.h -o $(INSTALL_DIR)/tinyfiledialogs/tinyfiledialogs.h; \
 	elif command -v wget >/dev/null 2>&1; then \
 		echo "Downloading from $(TINY_URL) ..."; \
-	 	wget $(TINY_URL)/tinyfiledialogs -O $(INSTALL_DIR)/tinyfiledialogs/tinyfiledialogs.c; \
+	 	wget $(TINY_URL)/tinyfiledialogs.c -O $(INSTALL_DIR)/tinyfiledialogs/tinyfiledialogs.c; \
 	 	wget $(TINY_URL)/tinyfiledialogs.h -O $(INSTALL_DIR)/tinyfiledialogs/tinyfiledialogs.h; \
 	else \
 		echo "$(COLOR_YELLOW)Error: curl or wget is required to download tinyfiledialogs.$(COLOR_RESET)"; \

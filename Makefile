@@ -128,5 +128,9 @@ deps:
 gcc:
 	@echo "$(COLOR_BOLD)Building with GCC...$(COLOR_RESET)"
 	@mkdir -p $(BUILD_DIR)
-	@gcc -Wall -Wextra -Werror -O2 src/*.c libs/tinyfiledialogs/tinyfiledialogs.c -o $(BUILD_DIR)/$(APP_NAME) -Iinclude -Ilibs/tinyfiledialogs -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer
+ifeq ($(UNAME_S),Windows)
+		@gcc -Wall -Wextra -Werror -O2 src/*.c libs/tinyfiledialogs/tinyfiledialogs.c -o $(BUILD_DIR)/$(APP_NAME) -Iinclude -Ilibs/tinyfiledialogs -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer
+else
+		@gcc -Wall -Wextra -Werror -O2 src/*.c libs/tinyfiledialogs/tinyfiledialogs.c -o $(BUILD_DIR)/$(APP_NAME) -Iinclude -Ilibs/tinyfiledialogs -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -lm
+endif
 	@echo "$(COLOR_GREEN)GCC build completed successfully!$(COLOR_RESET)"

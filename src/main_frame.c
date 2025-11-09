@@ -63,6 +63,7 @@ static void MainFrame_onCheckboxClicked(Input* input, SDL_Event* evt, Checkbox* 
 static void MainFrame_onShiftS(Input* input, SDL_Event* evt, MainFrame* self);
 static void MainFrame_onTabulation(Input* input, SDL_Event* evt, MainFrame* self);
 static void MainFrame_onShiftSpace(Input* input, SDL_Event* evt, MainFrame* self);
+static void MainFrame_onRuneH(Input* input, SDL_Event* evt, MainFrame* self);
 
 MainFrame* MainFrame_new(App* app) {
     MainFrame* self = calloc(1, sizeof(MainFrame));
@@ -300,6 +301,7 @@ void MainFrame_destroy(MainFrame* self) {
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_O, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_B, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_TAB, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_H, self);
 
     Input_removeOneEventHandler(self->app->input, SDL_MOUSEBUTTONDOWN, self);
     Input_removeOneEventHandler(self->app->input, SDL_MOUSEMOTION, self);
@@ -394,6 +396,7 @@ void MainFrame_focus(MainFrame* self) {
     Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_B, (EventHandlerFunc) MainFrame_onRuneB, self);
     Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_T, (EventHandlerFunc) MainFrame_onRuneT, self);
     Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_TAB, (EventHandlerFunc) MainFrame_onTabulation, self);
+    Input_addKeyEventHandler(self->app->input, SDL_SCANCODE_H, (EventHandlerFunc) MainFrame_onRuneH, self);
 
     Input_addEventHandler(self->app->input, SDL_MOUSEBUTTONDOWN, (EventHandlerFunc) MainFrame_onClick, self);
     Input_addEventHandler(self->app->input, SDL_MOUSEMOTION, (EventHandlerFunc) MainFrame_onMouseMove, self);
@@ -414,6 +417,7 @@ void MainFrame_unfocus(MainFrame* self) {
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_O, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_B, self);
     Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_TAB, self);
+    Input_removeOneKeyEventHandler(self->app->input, SDL_SCANCODE_H, self);
 
     Input_removeOneEventHandler(self->app->input, SDL_MOUSEBUTTONDOWN, self);
     Input_removeOneEventHandler(self->app->input, SDL_MOUSEMOTION, self);
@@ -1383,4 +1387,11 @@ static void MainFrame_onShiftSpace(Input* input, SDL_Event* evt, MainFrame* self
     }
     self->all_selected = true;
     MainFrame_addElements(self, self->app);
+}
+
+static void MainFrame_onRuneH(Input* input, SDL_Event* evt, MainFrame* self) {
+    if (!self || self->showSettings || MainFrame_isGraphSorting(self) || self->seed_container || self->sort_type_container) return;
+    UNUSED(input);
+    UNUSED(evt);
+    App_addFrame(self->app, HelpFrame_getFrame(HelpFrame_new(self->app)));
 }

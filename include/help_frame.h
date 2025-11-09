@@ -9,6 +9,8 @@
 struct HelpFrame {
     List* elements;
     App *app;
+    int curr_page;
+    int max_page;
 };
 
 HelpFrame* HelpFrame_new(App* app);

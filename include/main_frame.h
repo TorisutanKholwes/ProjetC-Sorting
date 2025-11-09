@@ -114,7 +114,7 @@ struct MainFrame {
 struct SortThreadArg {
     MainFrame* self;
     int graph_index;
-}
+};
 
 /**
  * @brief Allocate and initialize a new MainFrame instance.
